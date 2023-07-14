@@ -1,15 +1,25 @@
-name: Daily Ruby Script
+name: Daily Scraper
 
 on:
   schedule:
-    - cron: '0 0 * * *' # runs once a day at midnight
+    - cron: '0 0 * * *'  # Runs at midnight UTC
 
 jobs:
-  run_ruby:
-    runs-on: ubuntu-latest 
+
+  scrape:
+
+    runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v2
-    - uses: ruby/setup-ruby@v1 
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '2.7' # your ruby version here
-    - run: ruby ./getmenu.rb
+        ruby-version: 2.7
+    - name: Install dependencies
+      run: gem install nokogiri open-uri firebase
+        
+    - name: Run scraper
+      env:
+        FIREBASE_KEY: ${{ secrets.SECRET }}  
+      run: ruby scraper.rb
