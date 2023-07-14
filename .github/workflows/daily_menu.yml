@@ -1,8 +1,8 @@
-name: Daily Scraper
+name: Daily menu update
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
 
 jobs:
 
