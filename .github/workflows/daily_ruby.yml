@@ -1,0 +1,15 @@
+name: Daily Ruby Script
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # runs once a day at midnight
+
+jobs:
+  run_ruby:
+    runs-on: ubuntu-latest 
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1 
+      with:
+        ruby-version: '2.7' # your ruby version here
+    - run: ruby ./getmenu.rb
