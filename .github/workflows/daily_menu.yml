@@ -2,7 +2,7 @@ name: Daily menu update
 
 on:
   schedule:
-    - cron: '0 * * * *' # every hour
+    - cron: '*/10 * * * *' # every hour
 
 jobs:
 
@@ -22,4 +22,4 @@ jobs:
     - name: Run scraper
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
-      run: ruby getmenu.ru
+      run: ruby getmenu.rb

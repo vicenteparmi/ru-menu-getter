@@ -176,7 +176,7 @@ data.each do |city|
 
     # Call the function to scrape the menu
     # Add delay to avoid being blocked
-    sleep(5)
+    sleep(10)
     scrape_menu(ru_name, url, city_name)
   end
 end
