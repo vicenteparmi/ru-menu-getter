@@ -86,6 +86,19 @@ def scrape_menu(name, url, city)
     almoco = almoco.split("\n")
     jantar = jantar.split("\n")
 
+    # Replace '  ' with ' ' in the array, loop 3 times
+    for i in 0..2
+      cafe_da_manha.each do |element|
+        element.gsub!('  ', ' ')
+      end
+      almoco.each do |element|
+        element.gsub!('  ', ' ')
+      end
+      jantar.each do |element|
+        element.gsub!('  ', ' ')
+      end
+    end
+
     # Build the menu array item for this day
     element = [
       cafe_da_manha,
@@ -108,7 +121,8 @@ def scrape_menu(name, url, city)
 
   # Send to firebase database
   base_uri = 'https://campusdine-menu-default-rtdb.firebaseio.com'
-  secret = ENV['FIREBASE_KEY'] 
+  # secret = ENV['FIREBASE_KEY'] 
+  secret = 'ra41x3qL9lgohZdkXzirAMGRryyG5NxtIpAkxm1d'
   firebase = Firebase::Client.new(base_uri, secret)
 
   # Check if the menu already exists for each date, if not, push new menu
@@ -126,23 +140,17 @@ def scrape_menu(name, url, city)
     begin
       date = Date.strptime(element[0], date_format)
     rescue Date::Error => e
-      puts "Error parsing date: #{e.message}. Skipping..." # Sometimes it gets some random string instead of a date
+      puts "Error parsing date: #{e.message} (#{date}). Skipping..." # Sometimes it gets some random string instead of a date
       next  # Skip this iteration if date parsing failed
     end
 
     element[0] = date.strftime("%Y-%m-%d")
 
-
-  
-    # Check if the menu already exists
-    response = firebase.get("menus/#{city}/rus/#{name}/menus/#{element[0]}")
-    if response.body == nil
-      # Push new menu
-      response = firebase.update("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
-    end
+    # Update the database
+    response = firebase.update("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
 
     # Return the response
-    puts "Response code: #{response.code}. Finished scraping #{name} for the date #{element[0]}."
+    puts "Response: #{response.code}. Finished #{name} for #{element[0]}."
   end
 end
 
