@@ -6,6 +6,48 @@ require 'firebase'
 require 'open-uri'
 require 'nokogiri'
 
+# Move to the archive the active menus
+def moveData()
+  # Initialize Firebase
+  base_uri = ENV['BASE_URI']
+  secret = ENV['SECRET']
+  firebase = Firebase::Client.new(base_uri, secret)
+
+  # Get the references to the old and new data
+  old_ref = firebase.get("menus")
+  new_ref = firebase.get("archive/menus")
+
+  # Get the data from the database for each city, then each RU, and copy all days to the archive
+  old_ref.body.each do |city, city_data|
+    city_data["rus"].each do |ru, ru_data|
+      begin
+        ru_data["menus"].each do |date, date_data|
+          # Copy the data to the archive
+          response = firebase.get("menus/#{city}/rus/#{ru}/menus/#{date}")
+          response = firebase.set("archive/menus/#{city}/rus/#{ru}/menus/#{date}", response.body)
+          # Remove the data from the old database
+          response = firebase.delete("menus/#{city}/rus/#{ru}/menus/#{date}")
+
+          # Return the response
+          puts "[ARCHIVING] Finished #{ru} for #{date}."
+
+          # Add delay to avoid being blocked
+          sleep(1)
+        end
+      rescue NoMethodError => e
+        puts "[ARCHIVING] No menus found for #{ru}. Skipping..."
+        next
+      end
+    end
+  end
+
+  # Return the response
+  puts "[ARCHIVING] Finished moving data."
+end
+
+# Call the function to move the data
+moveData()
+
 # Create the array with all the info
 data = {
   "cwb" => {
@@ -31,8 +73,7 @@ data = {
 def scrape_menu(name, url, city)
   # Fetch the HTML content of the page
 
-  puts "Scraping #{name}..."
-  puts "URL: #{url}"
+  puts "[GETTING DATA > #{city} > #{name}] Starting..."
 
   html_content = URI.open(url)
 
@@ -77,9 +118,14 @@ def scrape_menu(name, url, city)
     jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
 
     # Remove the meal type from the strings
-    cafe_da_manha.slice! "CAFÉ DA MANHÃ"
-    almoco.slice! "ALMOÇO"
-    jantar.slice! "JANTAR"
+    begin
+      cafe_da_manha.slice! "CAFÉ DA MANHÃ"
+      almoco.slice! "ALMOÇO"
+      jantar.slice! "JANTAR"
+    rescue NoMethodError => e
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
+      next  # Skip this iteration if meal type parsing failed
+    end
 
     # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
@@ -120,8 +166,9 @@ def scrape_menu(name, url, city)
   end
 
   # Send to firebase database
-  base_uri = 'https://campusdine-menu-default-rtdb.firebaseio.com'
-  secret = ENV['FIREBASE_KEY'] 
+  # Initialize Firebase
+  base_uri = ENV['BASE_URI']
+  secret = ENV['SECRET']
   firebase = Firebase::Client.new(base_uri, secret)
 
   # Check if the menu already exists for each date, if not, push new menu
@@ -139,17 +186,17 @@ def scrape_menu(name, url, city)
     begin
       date = Date.strptime(element[0], date_format)
     rescue Date::Error => e
-      puts "Error parsing date: #{e.message} (#{date}). Skipping..." # Sometimes it gets some random string instead of a date
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: #{e.message} (#{date}). Skipping..." # Sometimes it gets some random string instead of a date
       next  # Skip this iteration if date parsing failed
     end
 
     element[0] = date.strftime("%Y-%m-%d")
 
     # Update the database
-    response = firebase.update("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
+    response = firebase.set("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
 
     # Return the response
-    puts "Response: #{response.code}. Finished #{name} for #{element[0]}."
+    puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."
   end
 end
 
@@ -162,22 +209,19 @@ data.each do |city|
   city_name = city[0]
 
   # Display the city name
-  puts "City: #{city_name}"
+  puts "[GETTING DATA > #{city_name}] Starting..."
 
   # Get the RU list
   rus = city[1]["rus"]
 
   # Check if the RU list is present
   if rus.nil?
-    puts "No RUs found for #{city_name}. Skipping..."
+    puts "[GETTING DATA > #{city_name}] No RUs found. Skipping..."
     next
   end
 
   # Repeat for each RU
   rus.each do |ru_name, ru_data|
-    # Display the RU name as key, not the name value
-    puts "RU: #{ru_name}"
-
     # Get the RU URL
     url = ru_data["url"]
 

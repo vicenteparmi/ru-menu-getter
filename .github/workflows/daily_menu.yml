@@ -2,7 +2,8 @@ name: Daily menu update
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    # Runs at 10:30pm and 12:30pm every day (UTC)
+    - cron: '30 22,12 * * *'
 
 jobs:
 
