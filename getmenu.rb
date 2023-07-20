@@ -135,20 +135,18 @@ def scrape_menu(name, url, city)
     # Parse element[0] to date format, first convert to timestamp, then to date
     # The date may be in the format 20/09/2021 or 20/09/21
     date_parts = element[0].split("/")
-    if date_parts[2]&.length == 4
-      date_format = '%d/%m/%Y'  # Format for date with 4-digit year
-    else
-      date_format = '%d/%m/%y'  # Format for date with 2-digit year
-    end
 
-    begin
-      date = Date.strptime(element[0], date_format)
-    rescue Date::Error => e
-      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: #{e.message} (#{date}). Skipping..." # Sometimes it gets some random string instead of a date
+    if date_parts.length >= 3
+      year = date_parts[2].length == 4 ? date_parts[2] : "20#{date_parts[2]}"
+      month = date_parts[1].rjust(2, '0')
+      day = date_parts[0].rjust(2, '0')
+      date_str = "#{year}-#{month}-#{day}"
+    else
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: invalid format (#{element[0]}). Skipping..."
       next  # Skip this iteration if date parsing failed
     end
 
-    element[0] = date.strftime("%Y-%m-%d")
+    element[0] = date_str
 
     # Update the database
     response = firebase.set("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
