@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  scrape:
+  update-database:
 
     runs-on: ubuntu-latest
 
@@ -20,7 +20,14 @@ jobs:
     - name: Install dependencies
       run: gem install nokogiri open-uri firebase
         
-    - name: Run scraper
+    - name: Archive data
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
+        BASE_URL: ${{ secrets.BASE_URI }}
+      run: ruby movedata.rb
+
+    - name: Get menus
+      env:
+        FIREBASE_KEY: ${{ secrets.SECRET }}  
+        BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby getmenu.rb
