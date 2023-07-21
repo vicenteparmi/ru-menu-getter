@@ -16,12 +16,22 @@ data = {
       "ru-politecnico" => {
         "url" => "https://pra.ufpr.br/ru/ru-centro-politecnico/"
       },
+      "ru-botanico" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-jardim-botanico/"
+      }
     },
   },
   "mat" => {
     "rus" => {
       "ru-mat" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-matinhos/"
+      },
+    },
+  },
+  "pal" => {
+    "rus" => {
+      "ru-pal" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-palotina/"
       },
     },
   },
@@ -54,8 +64,14 @@ def scrape_menu(name, url, city)
   date = []
   weekday = []
   doc.search('p strong').each do |element|
+    
     # Separate the date from the day of the week
-    date << element.text.split(" ")[1]
+    #Check if is botanical
+    if name == "ru-botanico"
+      date << element.text.split(" – ")[1] # Keep in mind that it is not a regular dash, it is a special character
+    else
+      date << element.text.split(" ")[1]
+    end
 
     # Remove ":" from the day of the week
     element.text.split(" ")[0].slice! ":"
