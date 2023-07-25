@@ -1,0 +1,53 @@
+name: Daily menu update (MANUAL)
+
+on:
+   workflow_dispatch:
+
+
+    # Runs at 10:30pm and 12:30pm every day (UTC)
+
+
+
+jobs:
+
+  update-database:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Ruby
+
+      uses: ruby/setup-ruby@v1
+
+      with:
+
+        ruby-version: 2.7
+
+    - name: Install dependencies
+
+      run: gem install nokogiri open-uri firebase
+
+        
+
+    #- name: Archive data
+
+    #  env:
+
+     #   FIREBASE_KEY: ${{ secrets.SECRET }}  
+
+     #   BASE_URL: ${{ secrets.BASE_URI }}
+
+    #  run: ruby movedata.rb
+
+    - name: Get menus
+
+      env:
+
+        FIREBASE_KEY: ${{ secrets.SECRET }}  
+
+        BASE_URL: ${{ secrets.BASE_URI }}
+
+      run: ruby getmenu.rb
