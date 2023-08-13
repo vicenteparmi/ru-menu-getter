@@ -3,11 +3,6 @@ name: Daily menu update (MANUAL)
 on:
    workflow_dispatch:
 
-
-    # Runs at 10:30pm and 12:30pm every day (UTC)
-
-
-
 jobs:
 
   update-database:
