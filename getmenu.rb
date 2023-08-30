@@ -69,8 +69,8 @@ def scrape_menu(name, url, city)
     #Check if is botanical
     if name == "ru-botanico"
       date << element.text.split(" – ")[1] # Keep in mind that it is not a regular dash, it is a special character
-    elsif name == "ru-central"
-      date << element.text.split(" – ")[1]
+    # elsif name == "ru-central"
+    #   date << element.text.split(" – ")[1]
     else
       date << element.text.split(" ")[1]
     end
