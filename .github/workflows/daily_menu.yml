@@ -4,6 +4,7 @@ on:
   schedule:
     # Runs at 10:30pm and 12:30pm every day (UTC)
     - cron: '30 22,12 * * *'
+  workflow_dispatch:
 
 jobs:
 
@@ -31,3 +32,9 @@ jobs:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
         BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby getmenu.rb
+
+    - name: Add today's menu to archive
+      env:
+        FIREBASE_KEY: ${{ secrets.SECRET }}  
+        BASE_URL: ${{ secrets.BASE_URI }}
+      run: ruby movedata_today.rb
