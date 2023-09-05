@@ -66,7 +66,7 @@ def scrape_menu(name, url, city)
   doc.search('p strong').each do |element|
     
     # Separate the date from the day of the week
-    date << element.text.split(/( – |: | )/)[1]
+    date << element.text.split(/( – |: | )/)[2]
 
     # Remove ":" from the day of the week
     element.text.split(" ")[0].slice! ":"
