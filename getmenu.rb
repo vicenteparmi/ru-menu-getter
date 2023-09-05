@@ -65,17 +65,12 @@ def scrape_menu(name, url, city)
   weekday = []
   doc.search('p strong').each do |element|
     
-    text = element.text
+    # Separate the date from the day of the week
+    date << element.text.split(/( – |: | )/)[1]
 
-    if text.include?(" – ") # Check for en-dash separator
-      date, weekday = text.split(" – ") 
-    elsif text.include?(": ") # Check for colon+space separator
-      date, weekday = text.split(": ")
-    else # Default to space separator
-      date, weekday = text.split(" ")
-    end
-
-    weekday.delete!(":") # Remove colon from weekday
+    # Remove ":" from the day of the week
+    element.text.split(" ")[0].slice! ":"
+    weekday << element.text.split(" ")[0]
   end
 
   # Remove last two elements of the array
