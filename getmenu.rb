@@ -122,6 +122,9 @@ def scrape_menu(name, url, city)
     rescue NoMethodError
     end
 
+    # Print the current menu output
+    puts "[GETTING DATA > #{city} > #{name}] Menu for #{date[menut.length]}: #{cafe_da_manha} | #{almoco} | #{jantar}"
+
     # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
     almoco = almoco.split("\n")
