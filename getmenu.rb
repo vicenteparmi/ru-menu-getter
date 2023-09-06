@@ -18,10 +18,7 @@ data = {
       },
       "ru-botanico" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-jardim-botanico/"
-      },
-      "ru-agrarias" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-agrarias/"
-      },
+      }
     },
   },
   "mat" => {
@@ -84,45 +81,19 @@ def scrape_menu(name, url, city)
   menut = []
   doc.search('figure.wp-block-table').each do |element|
 
-    begin 
-      cafe_da_manha = element.text.split("ALMOÇO")[0]
-    rescue
-      cafe_da_manha = ""
-    end
-
-    begin
-      almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
-    rescue
-      begin
-        almoco = element.text.split("ALMOÇO")[1]
-      rescue
-        almoco = ""
-      end
-    end
-
-    begin
-      jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
-    rescue
-      jantar = ""
-    end
+    # Divide the meals by day and meal types ["CAFÉ DA MANHÃ", "ALMOÇO", "JANTAR"]
+    cafe_da_manha = element.text.split("ALMOÇO")[0]
+    almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
+    jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
 
     # Remove the meal type from the strings
     begin
-      cafe_da_manha.slice! "CAFÉ DA MANHÃ" 
-    rescue
-      cafe_da_manha = ""
-    end
-    
-    begin
+      cafe_da_manha.slice! "CAFÉ DA MANHÃ"
       almoco.slice! "ALMOÇO"
-    rescue
-      almoco = ""
-    end
-    
-    begin
       jantar.slice! "JANTAR"
-    rescue
-      jantar = ""
+    rescue NoMethodError => e
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
+      next  # Skip this iteration if meal type parsing failed
     end
 
     # Break the string into an array of strings
@@ -143,17 +114,12 @@ def scrape_menu(name, url, city)
       end
     end
 
-    # Build the menu array item for this day with the 3 meals if they exist
-    element = ""
-    if cafe_da_manha.length > 0
-      element.push(cafe_da_manha)
-    end
-    if almoco.length > 0
-      element.push(almoco)
-    end
-    if jantar.length > 0
-      element.push(jantar)
-    end
+    # Build the menu array item for this day
+    element = [
+      cafe_da_manha,
+      almoco,
+      jantar
+    ]
 
     menut << element
   end
