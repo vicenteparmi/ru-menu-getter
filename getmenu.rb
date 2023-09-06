@@ -18,10 +18,10 @@ data = {
       },
       "ru-botanico" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-jardim-botanico/"
-      }
+      },
       "ru-agrarias" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-agrarias/"
-      },
+      }
     },
   },
   "mat" => {
