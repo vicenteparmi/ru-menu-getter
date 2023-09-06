@@ -97,6 +97,7 @@ def scrape_menu(name, url, city)
         almoco = element.text.split("ALMOÇO")[1]
       rescue
         almoco = ""
+      end
     end
 
     begin
