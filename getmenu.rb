@@ -21,7 +21,7 @@ data = {
       },
       "ru-agrarias" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-agrarias/"
-      }
+      },
     },
   },
   "mat" => {
