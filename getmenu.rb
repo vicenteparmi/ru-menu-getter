@@ -109,21 +109,21 @@ def scrape_menu(name, url, city)
     # Remove the meal type from the strings
     begin
       cafe_da_manha.slice! "CAFÉ DA MANHÃ" 
-    rescue NoMethodError
+    rescue
+      cafe_da_manha = ""
     end
     
     begin
       almoco.slice! "ALMOÇO"
-    rescue NoMethodError
+    rescue
+      almoco = ""
     end
     
     begin
       jantar.slice! "JANTAR"
-    rescue NoMethodError
+    rescue
+      jantar = ""
     end
-
-    # Print the current menu output
-    puts "[GETTING DATA > #{city} > #{name}] Menu for #{date[menut.length]}: #{cafe_da_manha} | #{almoco} | #{jantar}"
 
     # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
@@ -143,12 +143,17 @@ def scrape_menu(name, url, city)
       end
     end
 
-    # Build the menu array item for this day
-    element = [
-      cafe_da_manha,
-      almoco,
-      jantar
-    ]
+    # Build the menu array item for this day with the 3 meals if they exist
+    element = ""
+    if cafe_da_manha.length > 0
+      element.push(cafe_da_manha)
+    end
+    if almoco.length > 0
+      element.push(almoco)
+    end
+    if jantar.length > 0
+      element.push(jantar)
+    end
 
     menut << element
   end
