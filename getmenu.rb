@@ -19,6 +19,9 @@ data = {
       "ru-botanico" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-jardim-botanico/"
       }
+      "ru-agrarias" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-agrarias/"
+      },
     },
   },
   "mat" => {
@@ -81,19 +84,41 @@ def scrape_menu(name, url, city)
   menut = []
   doc.search('figure.wp-block-table').each do |element|
 
-    # Divide the meals by day and meal types ["CAFÉ DA MANHÃ", "ALMOÇO", "JANTAR"]
-    cafe_da_manha = element.text.split("ALMOÇO")[0]
-    almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
-    jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
+    begin 
+      cafe_da_manha = element.text.split("ALMOÇO")[0]
+    rescue
+      cafe_da_manha = ""
+    end
+
+    begin
+      almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
+    rescue
+      begin
+        almoco = element.text.split("ALMOÇO")[1]
+      rescue
+        almoco = ""
+    end
+
+    begin
+      jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
+    rescue
+      jantar = ""
+    end
 
     # Remove the meal type from the strings
     begin
-      cafe_da_manha.slice! "CAFÉ DA MANHÃ"
+      cafe_da_manha.slice! "CAFÉ DA MANHÃ" 
+    rescue NoMethodError
+    end
+    
+    begin
       almoco.slice! "ALMOÇO"
+    rescue NoMethodError
+    end
+    
+    begin
       jantar.slice! "JANTAR"
-    rescue NoMethodError => e
-      puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
-      next  # Skip this iteration if meal type parsing failed
+    rescue NoMethodError
     end
 
     # Break the string into an array of strings
