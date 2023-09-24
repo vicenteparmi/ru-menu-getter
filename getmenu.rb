@@ -94,6 +94,7 @@ def scrape_menu(name, url, city)
     else
       almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
       jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
+    end
 
     # Remove the meal type from the strings
     begin
@@ -105,10 +106,12 @@ def scrape_menu(name, url, city)
         jantar = ""
       else
         jantar.slice! "JANTAR"
+      end
     rescue NoMethodError => e
       puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
       next  # Skip this iteration if meal type parsing failed
     end
+  end
 
     # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
@@ -119,6 +122,7 @@ def scrape_menu(name, url, city)
       jantar = ""
     else
       jantar = jantar.split("\n")
+    end
 
     # Replace '  ' with ' ' in the array, loop 3 times
     for i in 0..2
