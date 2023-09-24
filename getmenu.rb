@@ -188,7 +188,6 @@ def scrape_menu(name, url, city)
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."
   end
-end
 
 # Convert the data hash to an array
 data_array = data.to_a
