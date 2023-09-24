@@ -111,7 +111,6 @@ def scrape_menu(name, url, city)
       puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
       next  # Skip this iteration if meal type parsing failed
     end
-  end
 
     # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
@@ -132,9 +131,20 @@ def scrape_menu(name, url, city)
       almoco.each do |element|
         element.gsub!('  ', ' ')
       end
-      jantar.each do |element|
-        element.gsub!('  ', ' ')
+
+      # Check if the RU has dinner
+      if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
+        jantar = ["Sem refeições disponíveis"]
+      else
+        jantar.each do |element|
+          element.gsub!('  ', ' ')
+        end
       end
+
+      # Remove empty elements
+      cafe_da_manha.delete("")
+      almoco.delete("")
+      jantar.delete("")
     end
 
     # Build the menu array item for this day
@@ -159,8 +169,10 @@ def scrape_menu(name, url, city)
 
   # Send to firebase database
   # Initialize Firebase
-  base_uri = ENV['BASE_URL']
-  secret = ENV['FIREBASE_KEY']
+  # base_uri = ENV['BASE_URL']
+  # secret = ENV['FIREBASE_KEY']
+  base_uri = "https://campusdine-menu-default-rtdb.firebaseio.com/"
+  secret = "Ok3NfeNTMS3LqdefGW6N2njWCyNNctxhHtYJb1o3"
   firebase = Firebase::Client.new(base_uri, secret)
 
   # Check if the menu already exists for each date, if not, push new menu
@@ -188,6 +200,7 @@ def scrape_menu(name, url, city)
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."
   end
+end
 
 # Convert the data hash to an array
 data_array = data.to_a
@@ -217,10 +230,10 @@ data.each do |city|
     # Call the function to scrape the menu
     # Add delay to avoid being blocked
     sleep(10)
-    begin
-      scrape_menu(ru_name, url, city_name)
-    rescue NoMethodError => e
-      puts "Error on the scrape function"
-    end  
+    # begin
+    scrape_menu(ru_name, url, city_name)
+    # rescue NoMethodError => e
+    #   puts "Error on the scrape function"
+    # end  
   end
 end
