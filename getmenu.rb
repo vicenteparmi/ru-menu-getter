@@ -18,6 +18,9 @@ data = {
       },
       "ru-botanico" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-jardim-botanico/"
+      },
+      "ru-agrarias" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-agrarias/"
       }
     },
   },
@@ -83,14 +86,25 @@ def scrape_menu(name, url, city)
 
     # Divide the meals by day and meal types ["CAFÉ DA MANHÃ", "ALMOÇO", "JANTAR"]
     cafe_da_manha = element.text.split("ALMOÇO")[0]
-    almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
-    jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
+
+    # Check if the RU has dinner
+    if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
+      almoco = element.text.split("ALMOÇO")[1]
+      jantar = ""
+    else
+      almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
+      jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
 
     # Remove the meal type from the strings
     begin
       cafe_da_manha.slice! "CAFÉ DA MANHÃ"
       almoco.slice! "ALMOÇO"
-      jantar.slice! "JANTAR"
+
+      # Check if the RU has dinner
+      if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
+        jantar = ""
+      else
+        jantar.slice! "JANTAR"
     rescue NoMethodError => e
       puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
       next  # Skip this iteration if meal type parsing failed
@@ -99,7 +113,12 @@ def scrape_menu(name, url, city)
     # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
     almoco = almoco.split("\n")
-    jantar = jantar.split("\n")
+
+    # Check if the RU has dinner
+    if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
+      jantar = ""
+    else
+      jantar = jantar.split("\n")
 
     # Replace '  ' with ' ' in the array, loop 3 times
     for i in 0..2
