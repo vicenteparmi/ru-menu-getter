@@ -1,5 +1,5 @@
 # Initial version: 2023-03-07
-# Currently supports: RU Central, RU Politécnico, RU Matinhos
+# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina
 # Author: @vicenteparmi
 
 require 'firebase'
@@ -37,7 +37,7 @@ data = {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-palotina/"
       },
     },
-  },
+  }
 }
 
 # Function to scrape the menu
@@ -67,18 +67,27 @@ def scrape_menu(name, url, city)
   date = []
   weekday = []
   doc.search('p strong').each do |element|
-    
-    # Separate the date from the day of the week
-    date << element.text.split(/( – |: | )/)[2]
 
-    # Remove ":" from the day of the week
-    element.text.split(" ")[0].slice! ":"
-    weekday << element.text.split(" ")[0]
+    # Check if empty
+    if element.text.split(/( – |: | )/)[2].empty?
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: empty string. Skipping..."
+      next  # Skip this iteration if date parsing failed
+    elsif element.text.split(/( – |: | )/)[2].include? "/"
+      # Separate the date from the day of the week
+      date << element.text.split(/( – |: | )/)[2]
+      
+      # Remove ":" from the day of the week
+      element.text.split(" ")[0].slice! ":"
+      weekday << element.text.split(" ")[0]
+    else
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: invalid format (#{element.text.split(/( – |: | )/)[2]}). Skipping..."
+      next  # Skip this iteration if date parsing failed
+    end
   end
 
   # Remove last two elements of the array
   # The last two elements are random strings, not dates
-  date.pop(2)
+  # date.pop(2)
 
   # Get the menu of the meals inside the <figure class="wp-block-table"> tag
   menut = []
@@ -172,7 +181,7 @@ def scrape_menu(name, url, city)
   # base_uri = ENV['BASE_URL']
   # secret = ENV['FIREBASE_KEY']
   base_uri = "https://campusdine-menu-default-rtdb.firebaseio.com/"
-  secret = "Ok3NfeNTMS3LqdefGW6N2njWCyNNctxhHtYJb1o3"
+  secret = "CT2PY7Sjdk2n68dmdtzp2A98pPkbPwaPyHAQ7HUC"
   firebase = Firebase::Client.new(base_uri, secret)
 
   # Check if the menu already exists for each date, if not, push new menu
@@ -230,10 +239,10 @@ data.each do |city|
     # Call the function to scrape the menu
     # Add delay to avoid being blocked
     sleep(10)
-    # begin
-    scrape_menu(ru_name, url, city_name)
-    # rescue NoMethodError => e
-    #   puts "Error on the scrape function"
-    # end  
+    begin
+      scrape_menu(ru_name, url, city_name)
+    rescue NoMethodError => e
+      puts "Error on the scrape function"
+    end  
   end
 end
