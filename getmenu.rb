@@ -178,10 +178,9 @@ def scrape_menu(name, url, city)
 
   # Send to firebase database
   # Initialize Firebase
-  # base_uri = ENV['BASE_URL']
-  # secret = ENV['FIREBASE_KEY']
-  base_uri = "https://campusdine-menu-default-rtdb.firebaseio.com/"
-  secret = "CT2PY7Sjdk2n68dmdtzp2A98pPkbPwaPyHAQ7HUC"
+  base_uri = ENV['BASE_URL']
+  secret = ENV['FIREBASE_KEY']
+
   firebase = Firebase::Client.new(base_uri, secret)
 
   # Check if the menu already exists for each date, if not, push new menu
