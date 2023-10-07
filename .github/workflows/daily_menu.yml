@@ -37,4 +37,6 @@ jobs:
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
         BASE_URL: ${{ secrets.BASE_URI }}
+        GCLOUD_ADMIN: ${{ secrets.GCLOUD_ADMIN }}
+        GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
       run: ruby movedata_today.rb

@@ -8,8 +8,12 @@ def moveData()
     # Initialize Firebase
     base_uri = ENV['BASE_URL']
     secret = ENV['FIREBASE_KEY']
+    service_account_json = ENV['GCLOUD_ADMIN']
     firebase = Firebase::Client.new(base_uri, secret)
-    firestore = Google::Cloud::Firestore.new(base_uri, secret)
+    firestore = Google::Cloud::Firestore.new(
+      project_id: ENV['GCLOUD_PROJECT_ID'],
+      credentials: service_account_json
+    )
   
     # Get the references to the old and new data
     old_ref = firebase.get("menus")
