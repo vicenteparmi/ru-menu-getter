@@ -19,7 +19,7 @@ jobs:
       with:
         ruby-version: 2.7
     - name: Install dependencies
-      run: gem install nokogiri open-uri firebase
+      run: gem install nokogiri open-uri firebase google-cloud-firestore
         
     - name: Archive data
       env:
@@ -33,7 +33,7 @@ jobs:
         BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby getmenu.rb
 
-    - name: Add today's menu to archive
+    - name: Add today's menu to archive and firestore
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
         BASE_URL: ${{ secrets.BASE_URI }}
