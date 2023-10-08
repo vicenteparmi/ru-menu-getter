@@ -49,7 +49,7 @@ def moveData()
             # The last element of each array is joined with an 'e' instead of a comma
             result = {}
             names = ['breakfast', 'lunch', 'dinner']
-            data["menu"].each do |key, value|
+            data.each do |key, value|
               # Print state
               puts "[ADDING FOR TODAY] Converting #{ru} for #{date}..."
               puts "[ADDING FOR TODAY] #{key}: #{value}"
