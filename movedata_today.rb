@@ -34,11 +34,11 @@ def moveData()
 
             # Convert inner arrays to strings
             # The data is in the format:
-            #   menu = {
+            #   menu = [
             #     0: ['item1', 'item2', 'item3'],
             #     1: ['item1', 'item2', 'item3'],
             #     2: ['item1', 'item2', 'item3'],
-            #   }
+            #   ]
             #
             # The data should be in the format:
             #   menu = {
@@ -49,21 +49,10 @@ def moveData()
             # The last element of each array is joined with an 'e' instead of a comma
             result = {}
             names = ['breakfast', 'lunch', 'dinner']
-            data.each do |key, value|
-              # Print state
-              puts "[ADDING FOR TODAY] Converting #{ru} for #{date}..."
-              puts "[ADDING FOR TODAY] #{key}: #{value}"
-
-              # Check if is the last element
-              joiner = key.to_i == data["menu"].length - 1 ? ' e ' : ', '
-              result[names[key]] += joiner + value.to_s
+            data['menu'].each_with_index do |element, index|
+              result[names[index]] = element.join(', ').gsub(/, ([^,]*)$/, ' e \1')
             end
-            data["menu"] = result
-
-            #Make everything lowercase
-            data["menu"].each do |key, value|
-              data["menu"][key] = value.downcase
-            end
+            data['menu'] = result
 
             # Define the path in Firestore
             doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
