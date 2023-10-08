@@ -26,10 +26,17 @@ def moveData()
             firebase.set("archive/menus/#{city}/rus/#{ru}/menus/#{date}", response.body)
 
             # Copy the data to the archive on Firebase Firestore
-            response_body = JSON.parse(response.body)
-            flattened_response_body = flatten_array(response_body)
-            firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}").set(flattened_response_body)
-            
+            # Define the path in Firebase Realtime Database
+            path = "menus/#{city}/rus/#{ru}/menus/#{date}"
+
+            # Get the data from Firebase
+            data = response.body
+
+            # Define the path in Firestore
+            doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
+
+            # Write the data to Firestore
+            doc_ref.set(data)            
 
             # Return the response
             puts "[ADDING FOR TODAY] Finished #{ru} for #{date}."
