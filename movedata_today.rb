@@ -27,15 +27,10 @@ def moveData()
 
             # Copy the data to the archive on Firebase Firestore
             response_body = JSON.parse(response.body)
-            map_response_body = {}
-            response_body.each do |element|
-              map_response_body[element.id] = element
-            end
-
-            # Convert the map to a string before setting it in Firestore.
-            json_string = JSON.generate(map_response_body)
-            firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}").set(json_string)
+            flattened_response_body = flatten_array(response_body)
+            firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}").set(flattened_response_body)
             
+
             # Return the response
             puts "[ADDING FOR TODAY] Finished #{ru} for #{date}."
   
