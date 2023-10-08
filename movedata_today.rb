@@ -33,18 +33,25 @@ def moveData()
             data = response.body
 
             # Convert inner arrays to strings
-            result = {
-              'coffee': data['menu'][0].join(", "),
-              'breakfast': data['menu'][1].join(", "),
-              'lunch': data['menu'][2].join(", "),
-            }
-
-
-            # data.map do |key, value|
-            #   if value.is_a?(Array)
-            #     data[key] = value.join("\n")
-            #   end
-            # end
+            # The data is in the format:
+            #   menu = {
+            #     0: ['item1', 'item2', 'item3'],
+            #     1: ['item1', 'item2', 'item3'],
+            #     2: ['item1', 'item2', 'item3'],
+            #   }
+            #
+            # The data should be in the format:
+            #   menu = {
+            #     'breakfast': 'item1, item2 e item3',
+            #     'lubch': 'item1, item2 e item3',
+            #     'dinner': 'item1, item2 e item3',
+            #   }
+            # The last element of each array is joined with an 'e' instead of a comma
+            result = {}
+            data["menu"].each do |key, value|
+              result[key] = value.join(", ").gsub(/, ([^,]*)$/, ' e \1')
+            end
+            data["menu"] = result
 
             # Define the path in Firestore
             doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
