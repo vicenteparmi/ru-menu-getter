@@ -31,8 +31,11 @@ def moveData()
             response_body.each do |element|
               map_response_body[element.id] = element
             end
-            firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}").set(map_response_body)
 
+            # Convert the map to a string before setting it in Firestore.
+            json_string = JSON.generate(map_response_body)
+            firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}").set(json_string)
+            
             # Return the response
             puts "[ADDING FOR TODAY] Finished #{ru} for #{date}."
   
