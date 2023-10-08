@@ -25,11 +25,8 @@ def moveData()
             response = firebase.get("menus/#{city}/rus/#{ru}/menus/#{date}")
             firebase.set("archive/menus/#{city}/rus/#{ru}/menus/#{date}", response.body)
 
-            # Copy the data to the archive on Firebase Firestore, divided in 'coffee', 'lunch' and 'dinner'
-            archive = firestore.collection("archive").doc("menus").collection(city).doc("rus").collection(ru).doc("menus").collection(date)
-            archive.doc("coffee").set(response.body[0])
-            archive.doc("lunch").set(response.body[1])
-            archive.doc("dinner").set(response.body[2])
+            # Copy the data to the archive on Firebase Firestore
+            firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}").set(response.body)
 
             # Return the response
             puts "[ADDING FOR TODAY] Finished #{ru} for #{date}."

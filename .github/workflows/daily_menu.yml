@@ -6,9 +6,6 @@ on:
     - cron: '30 22,12 * * *'
   workflow_dispatch:
 
-env:
-  GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-
 jobs:
 
   update-database:
@@ -23,6 +20,12 @@ jobs:
         ruby-version: 2.7
     - name: Install dependencies
       run: gem install nokogiri open-uri firebase google-cloud-firestore
+
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
         
     - name: Archive data
       env:
