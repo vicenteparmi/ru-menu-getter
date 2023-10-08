@@ -50,9 +50,13 @@ def moveData()
             result = {}
             names = ['breakfast', 'lunch', 'dinner']
             data["menu"].each do |key, value|
+              # Print state
+              puts "[ADDING FOR TODAY] Converting #{ru} for #{date}..."
+              puts "[ADDING FOR TODAY] #{key}: #{value}"
+
               # Check if is the last element
-              joiner = key == data["menu"].length - 1 ? ' e ' : ', '
-              result[names[key]] += joiner + value;
+              joiner = key.to_i == data["menu"].length - 1 ? ' e ' : ', '
+              result[names[key]] += joiner + value.to_s
             end
             data["menu"] = result
 
