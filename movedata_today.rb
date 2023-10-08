@@ -32,11 +32,14 @@ def moveData()
             # Get the data from Firebase
             data = response.body
 
+            # Convert inner arrays to strings
+            data.map! { |inner_array| inner_array.join(', ') }
+
             # Define the path in Firestore
             doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
 
             # Write the data to Firestore
-            doc_ref.set(data)            
+            doc_ref.set({ 'menus' => data })         
 
             # Return the response
             puts "[ADDING FOR TODAY] Finished #{ru} for #{date}."
