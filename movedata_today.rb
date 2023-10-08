@@ -48,10 +48,18 @@ def moveData()
             #   }
             # The last element of each array is joined with an 'e' instead of a comma
             result = {}
+            names = ['breakfast', 'lunch', 'dinner']
             data["menu"].each do |key, value|
-              result[key] = value.join(", ").gsub(/, ([^,]*)$/, ' e \1')
+              # Check if is the last element
+              joiner = key == data["menu"].length - 1 ? ' e ' : ', '
+              result[names[key]] += joiner + value;
             end
             data["menu"] = result
+
+            #Make everything lowercase
+            data["menu"].each do |key, value|
+              data["menu"][key] = value.downcase
+            end
 
             # Define the path in Firestore
             doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
