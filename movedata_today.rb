@@ -33,7 +33,7 @@ def moveData()
             data = response.body
 
             # Convert inner arrays to strings
-            data.map! { |inner_array| inner_array.join(', ') }
+            data.map do |key, value|
 
             # Define the path in Firestore
             doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
