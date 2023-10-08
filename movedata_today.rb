@@ -48,7 +48,7 @@ def moveData()
             sleep(1)
           end
         rescue NoMethodError => e
-          puts "[ADDING FOR TODAY] No menus found for #{ru}. Skipping..."
+          puts "[ADDING FOR TODAY] No menus found for #{ru}. (#{e.message}). Skipping..."
           next
         end
       end
