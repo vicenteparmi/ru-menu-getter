@@ -1,5 +1,5 @@
 # Initial version: 2023-03-07
-# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina
+# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina, RU Mirassol (CEM em fase de testes)
 # Author: @vicenteparmi
 
 require 'firebase'
@@ -37,6 +37,16 @@ data = {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-palotina/"
       },
     },
+  },
+  "pon" => {
+    "rus" => {
+      "ru-cem" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-cem/"
+      },
+      "ru-mir" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-mirassol/"
+      }
+    }
   }
 }
 
@@ -69,24 +79,35 @@ def scrape_menu(name, url, city)
   doc.search('p strong').each do |element|
 
     # Check if empty
-    if element.text.split(/( – |: | )/)[2].empty?
-      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: empty string. Skipping..."
-      next  # Skip this iteration if date parsing failed
-    elsif element.text.split(/( – |: | )/)[2].include? "/"
-      # Separate the date from the day of the week
-      date << element.text.split(/( – |: | )/)[2]
-      
-      # Remove ":" from the day of the week
-      element.text.split(" ")[0].slice! ":"
-      weekday << element.text.split(" ")[0]
-    else
-      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: invalid format (#{element.text.split(/( – |: | )/)[2]}). Skipping..."
+    begin
+      # Split the text into an array of strings
+      split_text = element.text.split(/( – |: | )/)
+
+      # Skip if the words "FERIADO" or "RECESSO" are present in element
+      if element.text.include? "FERIADO" or element.text.include? "RECESSO"
+        puts "[GETTING DATA > #{city} > #{name}] Skipping date (FERIAS/RECESSO) #{split_text[0]}..."
+        next
+      end
+
+      if split_text[2].empty?
+        puts "[GETTING DATA > #{city} > #{name}] Error parsing date: empty string (#{element.text}). Skipping..."
+        next  # Skip this iteration if date parsing failed
+      elsif split_text[2].include? "/"
+        # Separate the date from the day of the week
+        date << split_text[2]
+
+        # Remove ":" from the day of the week
+        split_text[0].slice! ":"
+        weekday << split_text[0]
+      else
+        puts "[GETTING DATA > #{city} > #{name}] Error parsing date: invalid format (#{split_text[2]}). Skipping..."
+        next  # Skip this iteration if date parsing failed
+      end
+    rescue => error
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing date: #{error.message}. Skipping..."
       next  # Skip this iteration if date parsing failed
     end
   end
-
-  # Remove the items from the array that include "FERIADO" or "RECESSO"
-  date.delete_if { |item| item.include?("FERIADO") || item.include?("RECESSO") }
 
   # Get the menu of the meals inside the <figure class="wp-block-table"> tag
   menut = []
