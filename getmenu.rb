@@ -85,9 +85,8 @@ def scrape_menu(name, url, city)
     end
   end
 
-  # Remove last two elements of the array
-  # The last two elements are random strings, not dates
-  # date.pop(2)
+  # Remove the items from the array that include "FERIADO" or "RECESSO"
+  date.delete_if { |item| item.include?("FERIADO") || item.include?("RECESSO") }
 
   # Get the menu of the meals inside the <figure class="wp-block-table"> tag
   menut = []
@@ -166,7 +165,7 @@ def scrape_menu(name, url, city)
     menut << element
   end
 
-  for i in 0..date.length-1
+  for i in 0..menut.length-1
     element = [
       date[i],
       weekday[i],
