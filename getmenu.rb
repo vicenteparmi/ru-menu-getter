@@ -240,7 +240,7 @@ data.each do |city|
     begin
       scrape_menu(ru_name, url, city_name)
     rescue NoMethodError => e
-      puts "Error on the scrape function"
+      puts "Error on the scrape function: #{e.message}. Skipping..."
     end  
   end
 end
