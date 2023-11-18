@@ -16,5 +16,7 @@ jobs:
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
             - name: Run script
+              env:
+                SERVICE_ACCOUNT_CREDENTIALS: ${{ secrets.SERVICE_ACCOUNT_CREDENTIALS }}
               run: |
                 python data_analysis.py
