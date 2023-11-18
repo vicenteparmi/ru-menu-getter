@@ -1,6 +1,7 @@
 import json
+import firebase_admin
+from firebase_admin import db
 from collections import Counter
-import pyrebase
 import os
 
 location_unit_list = [
@@ -14,62 +15,25 @@ location_unit_list = [
     ("pon", "ru-mir"),
 ]
 
-with open("data.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
+def init_firebase():
+    # Initialize Firebase
+    cred = firebase_admin.credentials.Certificate(json.loads(os.environ['SERVICE_ACCOUNT_CREDENTIALS']))
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://campusdine-menu-default-rtdb.firebaseio.com'
+    })
 
-# def complete_list(data):
-#     common_meals = []
+def get_data():
+    # Load firebase data
+    data = db.reference("archive/menus").get()
 
-#     # location > "rus" > unit > "menus" > day > "menu" > item
-#     menu_list_coffee = []
-#     menu_list_lunch = []
-#     menu_list_dinner = []
+    # Convert to JSON
+    data = json.dumps(data)
 
-#     for location, location_data in data.items():
-#         for rus, rus_data in location_data.items():
-#             for unit, unit_data in rus_data.items():
-#                 for menus, menus_data in unit_data.items():
-#                     for date, date_data in menus_data.items():
-#                         for menu, menu_items in date_data.items():
-#                             if menu == "menu":
-#                                 for index, menu_item in enumerate(menu_items):
-#                                 # Clean up menu item
-#                                     replace_list = ["\n", "\t", "\r", "  ", "vegano: ", "saladas: ", "fehado", "sem refeições disponíveis"]
-#                                     for i in range(len(menu_item)):
-#                                         for replace in replace_list:
-#                                             menu_item[i] = menu_item[i].replace(replace, "")
+    return data
 
-#                                         # Remove spaces at the beginning and end of the string
-#                                             menu_item[i] = menu_item[i].strip()
-
-#                                         # Set all to lowercase
-#                                             menu_item[i] = menu_item[i].lower()
-
-#                                 # Remove empty items or items with only whitespace
-#                                     menu_item = list(filter(None, menu_item))
-#                                     menu_item = list(filter(lambda x: x.strip(), menu_item))
-
-#                                 # Add to the correct list
-#                                     if index == 0:
-#                                         menu_list_coffee.extend(menu_item)
-#                                     elif index == 1:
-#                                         menu_list_lunch.extend(menu_item)
-#                                     elif index == 2:
-#                                         menu_list_dinner.extend(menu_item)
-
-
-#     # Create a list of the most common meals for coffee, lunch, and dinner
-#     common_meals_coffee = Counter(menu_list_coffee).most_common(50)
-#     common_meals_lunch = Counter(menu_list_lunch).most_common(50)
-#     common_meals_dinner = Counter(menu_list_dinner).most_common(50)
-
-#     # Show the most common meals as a table
-#     for meal_type, common_meals in [("Coffee", common_meals_coffee), ("Lunch", common_meals_lunch), ("Dinner", common_meals_dinner)]:
-#         print(f"\nMost common meals for {meal_type}:")
-#         print("{:<30} {:<10}".format('Meal', 'Count'))
-#         for meal, count in common_meals:
-#             print("{:<30} {:<10}".format(meal, count))
-
+# Initialize Firebase
+init_firebase()
+data = get_data()
 
 def get_common_items_by_location_and_unit(data):
     common_items = {}
@@ -137,36 +101,12 @@ def common_items_filter(data, meal_type, location, unit):
 
     common_items = Counter(common_items[location][unit][meal_type])
 
-    # print(f"\n{location} {unit}")
-    # print(f"\nMost common meals for {meal_type}:")
-    # print("{:<30} {:<10}".format('Meal', 'Count'))
-    # for meal, count in common_items:
-    #     print("{:<30} {:<10}".format(meal, count))
-
     return common_items
 
 
 def upload_data(content):
-    # Initialize Firebase
-    config = {
-        "apiKey": "AIzaSyB0FHWnqGc3EfBaZy8VYiQO8lf6XiI5PsY",
-        "authDomain": "campusdine-menu.firebaseapp.com",
-        "databaseURL": "https://campusdine-menu-default-rtdb.firebaseio.com",
-        "projectId": "campusdine-menu",
-        "storageBucket": "campusdine-menu.appspot.com",
-        "messagingSenderId": "1081471577742",
-        "appId": "1:1081471577742:web:1ff5a12cdd56696fba63df",
-        "measurementId": "G-3MEJC2S8WT",
-        "serviceAccount": os.environ["SERVICE_ACCOUNT_CREDENTIALS"],
-    }
-
-    firebase = pyrebase.initialize_app(config)
-
-    # Get a reference to the database service
-    db = firebase.database()
-
     # Upload data
-    db.child("analysis").set(content)
+    db.reference("analysis").set(content)
 
     # Print result
     print("Data uploaded to Firebase")
@@ -189,6 +129,9 @@ def __main__():
     # Print results as a full table
     print("\n\n")
     print(common_items)
+
+    # Upload data
+    upload_data(common_items)
 
 
 __main__()
