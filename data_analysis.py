@@ -113,7 +113,7 @@ def upload_data(content):
 
     # Add timestamp to the database with current time on python
     db.reference("analysis/timestamp").set(
-        datetime.utcnow().strftime('%F %T')
+        int(datetime.now().timestamp() * 1000)
     )
 
     # Print result
