@@ -1,3 +1,2 @@
-json
 collections
 firebase-admin
