@@ -122,8 +122,12 @@ def __main__():
 
     # Divide by location, unit and meal type
     for location, unit in location_unit_list:
-        common_items[location] = {}
-        common_items[location][unit] = {}
+        if location not in common_items:
+            common_items[location] = {}
+
+        if unit not in common_items[location]:
+            common_items[location][unit] = {}
+            
         for meal_type in ["coffee", "lunch", "dinner"]:
             common_items[location][unit][meal_type] = common_items_filter(
                 data, meal_type, location, unit
