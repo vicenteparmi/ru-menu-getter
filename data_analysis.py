@@ -3,6 +3,7 @@ import firebase_admin
 from firebase_admin import db
 from collections import Counter
 import os
+from datetime import datetime
 
 location_unit_list = [
     ("cwb", "ru-politecnico"),
@@ -106,10 +107,14 @@ def common_items_filter(data, meal_type, location, unit):
 
     return common_items
 
-
 def upload_data(content):
     # Upload data
     db.reference("analysis").set(content)
+
+    # Add timestamp to the database with current time on python
+    db.reference("analysis/timestamp").set(
+        datetime.utcnow().strftime('%F %T')
+    )
 
     # Print result
     print("Data uploaded to Firebase")
