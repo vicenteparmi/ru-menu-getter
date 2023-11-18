@@ -27,7 +27,7 @@ def get_data():
     data = db.reference("archive/menus").get()
 
     # Convert to JSON
-    data = json.dumps(data)
+    data = json.loads(json.dumps(data))
 
     return data
 
