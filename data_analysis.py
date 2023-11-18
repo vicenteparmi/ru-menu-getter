@@ -99,7 +99,7 @@ def get_common_items_by_location_and_unit(data):
 def common_items_filter(data, meal_type, location, unit):
     common_items = get_common_items_by_location_and_unit(data)
 
-    common_items = Counter(common_items[location][unit][meal_type])
+    common_items = common_items[location][unit][meal_type]
 
     return common_items
 
