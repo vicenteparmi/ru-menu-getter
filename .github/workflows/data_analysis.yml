@@ -1,9 +1,6 @@
 name: Analyse data
 
 on:
-  schedule:
-    # Runs every 2 sundays at noon (UTC-3:00)
-    - cron: '0 15 1-7,15-21 * 0'
   workflow_dispatch:
 
 jobs:
