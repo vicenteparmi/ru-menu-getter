@@ -14,13 +14,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 2.7
+        ruby-version: 3.0
+
     - name: Install dependencies
       run: gem install nokogiri open-uri firebase google-cloud-firestore
-      run:  gem install faraday-net_http 3.0.2
 
     - id: 'auth'
       name: 'Authenticate to Google Cloud'
