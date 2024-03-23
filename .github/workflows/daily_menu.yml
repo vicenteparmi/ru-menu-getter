@@ -2,8 +2,8 @@ name: Daily menu update
 
 on:
   schedule:
-    # Runs at 10:30pm and 12:30pm every day (UTC)
-    - cron: '30 22,12 * * *'
+    # Runs at 11:30pm every day (UTC)
+    - cron: '30 23 * * *'
   workflow_dispatch:
 
 jobs:
@@ -40,6 +40,12 @@ jobs:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
         BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby UFPR.rb
+
+    - name: Get UFABC menus
+      env:
+        FIREBASE_KEY: ${{ secrets.SECRET }}  
+        BASE_URL: ${{ secrets.BASE_URI }}
+      run: ruby UFABC.rb
 
     - name: Add today's menu to archive and firestore
       env:

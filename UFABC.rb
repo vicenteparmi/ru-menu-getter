@@ -75,7 +75,7 @@ def scrape_menu(name, url, city)
   # Append saladas and sobremesas to almoço and jantar
   almoco = almoco.map.with_index do |menu, index|
     if menu.nil?
-      menu = []
+      menu = ["Não disponível"]
     else
       saladas = doc.css("tr:not(.bgCinza) h3:contains('Saladas') + ul")[index].css("li").map { |item| item.text }
       sobremesas = doc.css("tr:not(.bgCinza) h3:contains('Sobremesas') + ul")[index].css("li").map { |item| item.text }
@@ -86,8 +86,8 @@ def scrape_menu(name, url, city)
   end
 
   jantar = jantar.map.with_index do |menu, index|
-    if menu.nil?
-      menu = []
+    if menu.nil? || menu.empty?
+      menu = ["Não disponível"]
     else
       saladas = doc.css("tr:not(.bgCinza) h3:contains('Saladas') + ul")[index].css("li").map { |item| item.text }
       sobremesas = doc.css("tr:not(.bgCinza) h3:contains('Sobremesas') + ul")[index].css("li").map { |item| item.text }
