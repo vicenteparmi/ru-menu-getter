@@ -1,4 +1,4 @@
-name: Daily menu update
+name: Weekly menu update
 
 on:
   schedule:
