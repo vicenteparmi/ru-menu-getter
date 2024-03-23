@@ -128,10 +128,8 @@ def scrape_menu(name, url, city)
 
   # Send to firebase database
   # Initialize Firebase
-  # base_uri = ENV['BASE_URL']
-  # secret = ENV['FIREBASE_KEY']
-  base_uri = "https://campusdine-menu-default-rtdb.firebaseio.com/"
-  secret = "5Qbu0JabMvBdPWpqcLKEz74YbmzQHJZsE3yUpJBT"
+  base_uri = ENV['BASE_URL']
+  secret = ENV['FIREBASE_KEY']
 
   firebase = Firebase::Client.new(base_uri, secret)
 
