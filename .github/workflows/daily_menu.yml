@@ -46,6 +46,12 @@ jobs:
         FIREBASE_KEY: ${{ secrets.SECRET }}  
         BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby UFABC.rb
+    
+    - name: Get UFRGS menus
+      env:
+        FIREBASE_KEY: ${{ secrets.SECRET }}  
+        BASE_URL: ${{ secrets.BASE_URI }}
+      run: ruby UFRGS.rb
 
     - name: Add today's menu to archive and firestore
       env:
