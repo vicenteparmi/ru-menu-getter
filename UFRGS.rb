@@ -138,7 +138,7 @@ def scrape_menu(name, page_data, city)
       current_menu = firebase.get("menus/#{city}/rus/#{name}/menus/#{date[0]}").body["menu"] rescue nil
 
       # If the current menu doesn't exist, initialize it as an array of empty arrays
-      current_menu = [["Não definido"],["Não definido"],["Não definido"]] if current_menu.nil?
+      current_menu = [["Sem refeições disponíveis"],["Sem refeições disponíveis"],["Sem refeições disponíveis"]] if current_menu.nil?
 
       # Update the current menu with the new meals
       current_menu[id+1] = meals[index]
