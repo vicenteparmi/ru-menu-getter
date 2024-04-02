@@ -24,34 +24,32 @@ url = "https://www.ufrgs.br/prae/cardapio-ru/"
 
 # Function to extract the date range from a string
 def extract_date_range(string)
-
-  # String format: "Almoço 01/03 a 05/03" or "Jantar 1 a 05/03"
-  # Split the string into words
-  words = string.split(" ")
-
-  # Extract the meal type (e.g., "Almoço" or "Jantar")
-  meal_type = words.first
-
-  # Extract the initial and final dates
-  
-  # Check if the date is in the format "dd/mm a dd/mm" or "d a dd/mm"
-  if words[2].include?("/")
-    initial_date = words[1]
-    final_date = words[3]
-  else
-    initial_date = words[1] + "/" + words[3].split("/").last
-    final_date = words[3]
+  begin
+    # String format: "Almoço 01/03 a 05/03" or "Jantar 1 a 05/03"
+    # Split the string into words
+    words = string.split(" ")
+    # Extract the meal type (e.g., "Almoço" or "Jantar")
+    meal_type = words.first
+    # Extract the initial and final dates
+    # Check if the date is in the format "dd/mm a dd/mm" or "d a dd/mm"
+    if words[2].include?("/")
+      initial_date = words[1]
+      final_date = words[3]
+    else
+      initial_date = words[1] + "/" + words[3].split("/").last
+      final_date = words[3]
+    end
+    # Convert to date format yyyy-mm-dd
+    initial_date = Date.strptime(initial_date, "%d/%m").strftime("%Y-%m-%d")
+    final_date = Date.strptime(final_date, "%d/%m").strftime("%Y-%m-%d")
+    # Calculate the difference between the initial and final dates
+    date_difference = (Date.parse(final_date) - Date.parse(initial_date)).to_i
+    # Return the extracted data
+    { meal_type: meal_type, initial_date: initial_date, final_date: final_date, date_difference: date_difference }
+  rescue => e
+    puts "Error: #{e.message}"
+    # You can log the error or handle it differently based on your requirements
   end
-
-  # Convert to date format yyyy-mm-dd
-  initial_date = Date.strptime(initial_date, "%d/%m").strftime("%Y-%m-%d")
-  final_date = Date.strptime(final_date, "%d/%m").strftime("%Y-%m-%d")
-
-  # Calculate the difference between the initial and final dates
-  date_difference = (Date.parse(final_date) - Date.parse(initial_date)).to_i
-
-  # Return the extracted data
-  { meal_type: meal_type, initial_date: initial_date, final_date: final_date, date_difference: date_difference }
 end
 
 # Function to scrape the menu
