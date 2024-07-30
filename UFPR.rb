@@ -76,33 +76,35 @@ def scrape_menu(name, url, city)
   # Get the date of the meals inside the <p><strong> tag
   date = []
   weekday = []
-  doc.search('p strong').each do |element|
-
-    # Check if empty
+  doc.search('p').each do |p_element|
+    strong_elements = p_element.search('strong')
+    
     begin
-      # Split the text into an array of strings
-      split_text = element.text.split(/( – |: | )/)
-
-      # Skip if the words "FERIADO", "RECESSO" or "alterações" are present in element
-      if element.text.include? "FERIADO" or element.text.include? "RECESSO" or element.text.include? "alterações"
+      # Combine text from all strong elements within the p tag
+      combined_text = strong_elements.map(&:text).join
+  
+      # Split the combined text into an array of strings
+      split_text = combined_text.split(/( – |: | )/)
+  
+      # Skip if the words "FERIADO", "RECESSO" or "alterações" are present
+      if combined_text.include?("FERIADO") || combined_text.include?("RECESSO") || combined_text.include?("alterações")
         puts "[GETTING DATA > #{city} > #{name}] Skipping date (FERIAS/RECESSO) #{split_text[0]}..."
         next
       end
-
-      if split_text[2].empty?
-        puts "[GETTING DATA > #{city} > #{name}] Error parsing date: empty string (#{element.text}). Skipping..."
-        next  # Skip this iteration if date parsing failed
-      elsif split_text[2].include? "/"
-        # Separate the date from the day of the week
-        date << split_text[2]
-
-        # Remove ":" from the day of the week
-        split_text[0].slice! ":"
-        weekday << split_text[0]
-      else
-        puts "[GETTING DATA > #{city} > #{name}] Error parsing date: invalid format (#{split_text[2]}). Skipping..."
-        next  # Skip this iteration if date parsing failed
+  
+      # Check if the date is empty or doesn't contain "/"
+      if split_text[2].nil? || split_text[2].empty? || !split_text[2].include?("/")
+        puts "[GETTING DATA > #{city} > #{name}] Error parsing date: invalid format (#{combined_text}). Skipping..."
+        next
       end
+  
+      # Separate the date from the day of the week
+      date << split_text[2]
+  
+      # Remove ":" from the day of the week
+      split_text[0].slice!(":")
+      weekday << split_text[0]
+  
     rescue => error
       puts "[GETTING DATA > #{city} > #{name}] Error parsing date: #{error.message}. Skipping..."
       next  # Skip this iteration if date parsing failed
