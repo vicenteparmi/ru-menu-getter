@@ -83,8 +83,8 @@ def scrape_menu(name, url, city)
       # Split the text into an array of strings
       split_text = element.text.split(/( – |: | )/)
 
-      # Skip if the words "FERIADO" or "RECESSO" are present in element
-      if element.text.include? "FERIADO" or element.text.include? "RECESSO"
+      # Skip if the words "FERIADO", "RECESSO" or "alterações" are present in element
+      if element.text.include? "FERIADO" or element.text.include? "RECESSO" or element.text.include? "alterações"
         puts "[GETTING DATA > #{city} > #{name}] Skipping date (FERIAS/RECESSO) #{split_text[0]}..."
         next
       end
