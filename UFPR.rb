@@ -114,78 +114,41 @@ def scrape_menu(name, url, city)
   # Get the menu of the meals inside the <figure class="wp-block-table"> tag
   menut = []
   doc.search('figure.wp-block-table').each do |element|
+    text = element.text.downcase
 
-    # Divide the meals by day and meal types ["CAFÉ DA MANHÃ", "ALMOÇO", "JANTAR"]
-    cafe_da_manha = element.text.split("ALMOÇO")[0]
-
-    # Check if the RU has dinner
-    if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
-      almoco = element.text.split("ALMOÇO")[1]
+    cafe_da_manha = text.split("almoço")[0]
+    if text.split("almoço")[1]&.split("jantar")[1].nil?
+      almoco = text.split("almoço")[1]
       jantar = ""
     else
-      almoco = element.text.split("ALMOÇO")[1].split("JANTAR")[0]
-      jantar = element.text.split("ALMOÇO")[1].split("JANTAR")[1]
+      almoco = text.split("almoço")[1].split("jantar")[0]
+      jantar = text.split("almoço")[1].split("jantar")[1]
     end
 
-    # Remove the meal type from the strings
     begin
-      cafe_da_manha.slice! "CAFÉ DA MANHÃ"
-      almoco.slice! "ALMOÇO"
-
-      # Check if the RU has dinner
-      if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
-        jantar = ""
-      else
-        jantar.slice! "JANTAR"
-      end
+      cafe_da_manha.slice!("café da manhã")
+      almoco.slice!("almoço")
+      jantar.slice!("jantar") unless jantar.empty?
     rescue NoMethodError => e
-      puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..." # When the people at the RU do not add the meal...
-      next  # Skip this iteration if meal type parsing failed
+      puts "[GETTING DATA > #{city} > #{name}] Error parsing meal type: #{e.message} #{date}. Skipping..."
+      next
     end
 
-    # Break the string into an array of strings
     cafe_da_manha = cafe_da_manha.split("\n")
     almoco = almoco.split("\n")
+    jantar = jantar.empty? ? "" : jantar.split("\n")
 
-    # Check if the RU has dinner
-    if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
-      jantar = ""
-    else
-      jantar = jantar.split("\n")
+    3.times do
+      [cafe_da_manha, almoco, jantar].each do |meal|
+        next if meal.is_a?(String)
+        meal.each { |item| item.gsub!('  ', ' ') }
+        meal.delete("")
+      end
     end
 
-    # Replace '  ' with ' ' in the array, loop 3 times
-    for i in 0..2
-      cafe_da_manha.each do |element|
-        element.gsub!('  ', ' ')
-      end
-      almoco.each do |element|
-        element.gsub!('  ', ' ')
-      end
+    jantar = ["Sem refeições disponíveis"] if jantar == ""
 
-      # Check if the RU has dinner
-      if element.text.split("ALMOÇO")[1].split("JANTAR")[1].nil?
-        jantar = ["Sem refeições disponíveis"]
-      else
-        jantar.each do |element|
-          element.gsub!('  ', ' ')
-        end
-      end
-
-      # Remove empty elements
-      cafe_da_manha.delete("")
-      almoco.delete("")
-      jantar.delete("")
-    end
-
-    # Build the menu array item for this day
-    element = [
-      cafe_da_manha,
-      almoco,
-      jantar
-    ]
-
-    menut << element
+    menut << [cafe_da_manha, almoco, jantar]
   end
 
   for i in 0..menut.length-1
