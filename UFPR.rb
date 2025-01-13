@@ -140,9 +140,12 @@ def scrape_menu(name, url, city)
 
     3.times do
       [cafe_da_manha, almoco, jantar].each do |meal|
-        next if meal.is_a?(String)
-        meal.each { |item| item.gsub!('  ', ' ') }
-        meal.delete("")
+      next if meal.is_a?(String)
+      meal.each { |item| item.gsub!('  ', ' ') }
+      meal.delete("")
+      meal.map! do |item|
+          item.split(" ").map.with_index { |word, index| index == 0 ? word.capitalize : word.downcase }.join(" ")
+        end
       end
     end
 
