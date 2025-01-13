@@ -3,7 +3,7 @@ name: Daily menu update
 on:
   schedule:
     # Runs at 11:30pm every day (UTC)
-    - cron: '0 23 * * *'
+    - cron: '0 12,0 * * *'
   workflow_dispatch:
 
 jobs:
