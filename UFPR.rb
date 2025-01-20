@@ -81,7 +81,7 @@ def scrape_menu(name, url, city)
     
     begin
       # Remove space (" ") in the beginning of the text or at the end that may appear
-      strong_elements_parsed = strong_elements.map { |element| element.text.strip }
+      strong_elements_parsed = strong_elements.map { |element| element.strip }
 
       # Combine text from all strong elements within the p tag
       combined_text = strong_elements_parsed.map(&:text).join
