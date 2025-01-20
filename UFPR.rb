@@ -1,5 +1,5 @@
 # Initial version: 2023-03-07
-# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina, RU Mirassol (CEM em fase de testes)
+# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina, RU Mirassol, RU CEM
 # Author: @vicenteparmi
 
 require 'firebase'
@@ -81,19 +81,8 @@ def scrape_menu(name, url, city)
     
     begin
       # Remove space (" ") from beginning and end of the text using gsub
-      # Be careful for the errors:
-      # Error parsing date: undefined method 'gsub' for an instance of Nokogiri::XML::Element
-      # undefined method 'text' for an instance of String
-      strong_elements_parsed = strong_elements.map do |element|
-        if element.is_a?(String)
-          element.gsub(/^\s+|\s+$/, '')
-        else
-          element.text.gsub(/^\s+|\s+$/, '')
-        end
-      end
-
       # Combine text from all strong elements within the p tag
-      combined_text = strong_elements_parsed.map(&:text).join
+      combined_text = strong_elements.map(&:text).join(" ").gsub(/\A\p{Space}+|\p{Space}+\z/, '')
   
       # Split the combined text into an array of strings
       split_text = combined_text.split(/( – |: | )/)
