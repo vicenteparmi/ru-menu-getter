@@ -80,8 +80,17 @@ def scrape_menu(name, url, city)
     strong_elements = p_element.search('strong')
     
     begin
-      # Remove space (" ") in the beginning of the text or at the end that may appear
-      strong_elements_parsed = strong_elements.map { |element| element.text.strip }
+      # Remove space (" ") from beginning and end of the text using gsub
+      # Be careful for the errors:
+      # Error parsing date: undefined method 'gsub' for an instance of Nokogiri::XML::Element
+      # undefined method 'text' for an instance of String
+      strong_elements_parsed = strong_elements.map do |element|
+        if element.is_a?(String)
+          element.gsub(/^\s+|\s+$/, '')
+        else
+          element.text.gsub(/^\s+|\s+$/, '')
+        end
+      end
 
       # Combine text from all strong elements within the p tag
       combined_text = strong_elements_parsed.map(&:text).join
