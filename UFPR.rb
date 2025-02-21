@@ -1,5 +1,6 @@
 # Initial version: 2023-03-07
-# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina, RU Mirassol, RU CEM
+# Updated: 2025-02-21
+# Currently supports: RU Central, RU Politécnico, RU Matinhos, RU Botânico, RU Agrárias, RU Palotina, RU Mirassol, RU CEM, RU Toledo, RU Jandaia do Sul
 # Author: @vicenteparmi
 
 require 'firebase'
@@ -46,6 +47,20 @@ data = {
       "ru-mir" => {
         "url" => "https://pra.ufpr.br/ru/cardapio-ru-mirassol/"
       }
+    }
+  },
+  "tol" => {
+    "rus" => {
+      "ru-toledo" => {
+        "url" => "https://pra.ufpr.br/ru/6751-2/"
+      },
+    }
+  },
+  "jan" => {
+    "rus" => {
+      "ru-jandaia" => {
+        "url" => "https://pra.ufpr.br/ru/cardapio-ru-jandaia-do-sul/"
+      },
     }
   }
 }
