@@ -25,30 +25,44 @@ url = "https://www.ufrgs.br/prae/cardapio-ru/"
 # Function to extract the date range from a string
 def extract_date_range(string)
   begin
-    # String format: "Almoço 01/03 a 05/03" or "Jantar 1 a 05/03"
     # Split the string into words
     words = string.split(" ")
     # Extract the meal type (e.g., "Almoço" or "Jantar")
     meal_type = words.first
-    # Extract the initial and final dates
-    # Check if the date is in the format "dd/mm a dd/mm" or "d a dd/mm"
-    if words[2].include?("/")
+
+    if words.include?("de")
+      # Handle format like "Almoço 17 a 21 de fevereiro"
+      month_index = words.index("de")
+      month_name = words[month_index + 1].downcase
+
+      month = {
+        "janeiro" => "01", "fevereiro" => "02", "março" => "03", "abril" => "04",
+        "maio" => "05", "junho" => "06", "julho" => "07", "agosto" => "08",
+        "setembro" => "09", "outubro" => "10", "novembro" => "11", "dezembro" => "12"
+      }[month_name]
+
+      initial_date = "#{words[1]}/#{month}"
+      final_date   = "#{words[3]}/#{month}"
+    elsif words[2].include?("/")
+      # Handle format like "Almoço 01/03 a 05/03"
       initial_date = words[1]
-      final_date = words[3]
+      final_date   = words[3]
     else
-      initial_date = words[1] + "/" + words[3].split("/").last
-      final_date = words[3]
+      # Handle format like "Jantar 1 a 05/03"
+      initial_date = "#{words[1]}/" + words[3].split("/").last
+      final_date   = words[3]
     end
-    # Convert to date format yyyy-mm-dd
-    initial_date = Date.strptime(initial_date, "%d/%m").strftime("%Y-%m-%d")
-    final_date = Date.strptime(final_date, "%d/%m").strftime("%Y-%m-%d")
+
+    # Convert dates to format yyyy-mm-dd
+    initial_date_formatted = Date.strptime(initial_date, "%d/%m").strftime("%Y-%m-%d")
+    final_date_formatted   = Date.strptime(final_date, "%d/%m").strftime("%Y-%m-%d")
     # Calculate the difference between the initial and final dates
-    date_difference = (Date.parse(final_date) - Date.parse(initial_date)).to_i
-    # Return the extracted data
-    { meal_type: meal_type, initial_date: initial_date, final_date: final_date, date_difference: date_difference }
+    date_difference = (Date.parse(final_date_formatted) - Date.parse(initial_date_formatted)).to_i
+
+    { meal_type: meal_type, initial_date: initial_date_formatted, final_date: final_date_formatted, date_difference: date_difference }
   rescue => e
     puts "Error: #{e.message}"
-    # You can log the error or handle it differently based on your requirements
+    # Optionally log the error or handle it differently
   end
 end
 
@@ -186,7 +200,11 @@ data.each do |city|
   end
 
   # Open URL and get the HTML content
-  html_content = URI.open(url)
+  html_content = URI.open(
+      url, read_timeout: 10,
+      open_timeout: 10,
+      'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    )
 
   # Parse the HTML content with Nokogiri
   page_data = Nokogiri::HTML(html_content)
