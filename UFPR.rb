@@ -99,14 +99,37 @@ def scrape_menu(name, url, city)
       # Combine text from all strong elements within the p tag
       combined_text = strong_elements.map(&:text).join(" ").gsub(/\A\p{Space}+|\p{Space}+\z/, '')
   
-      # Split the combined text into an array of strings
-      split_text = combined_text.split(/( – |: | )/)
-  
       # Skip if the words "FERIADO", "RECESSO" or "alterações" are present
       if combined_text.include?("FERIADO") || combined_text.include?("RECESSO") || combined_text.include?("alterações")
-        puts "[GETTING DATA > #{city} > #{name}] Skipping date (FERIAS/RECESSO) #{split_text[0]}..."
+        puts "[GETTING DATA > #{city} > #{name}] Skipping date (FERIAS/RECESSO) #{combined_text}..."
         next
       end
+      
+      # Handle complex date formats like "Quinta-feira 06/03/2025 (ABERTO COM HORÁRIO DE FERIADO)"
+      if combined_text.match?(/\d{1,2}\/\d{1,2}\/\d{2,4}/)
+        # Extract date using regex - find pattern like DD/MM/YYYY or DD/MM/YY
+        date_match = combined_text.match(/(\d{1,2}\/\d{1,2}\/\d{2,4})/)
+        extracted_date = date_match ? date_match[1] : nil
+        
+        # Extract weekday - it should be before the date
+        if date_match && date_match.pre_match
+          extracted_weekday = date_match.pre_match.strip.split(/\s+/).first
+        else
+          # Try traditional split method as fallback
+          extracted_weekday = combined_text.split(/\s+/).first
+        end
+        
+        if extracted_date && !extracted_date.empty?
+          date << extracted_date
+          weekday << extracted_weekday.gsub(/:$/, '') # Remove colon if present
+          puts "[GETTING DATA > #{city} > #{name}] Parsed complex date: #{extracted_weekday} - #{extracted_date}"
+          next
+        end
+      end
+
+      # Fallback to original parsing method
+      # Split the combined text into an array of strings
+      split_text = combined_text.split(/( – |: | )/)
   
       # Check if the date is empty or doesn't contain "/"
       if split_text[2].nil? || split_text[2].empty? || !split_text[2].include?("/")
