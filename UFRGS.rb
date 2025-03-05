@@ -8,6 +8,7 @@ require 'open-uri'
 require 'nokogiri'
 require 'date'
 require 'net/http'
+require 'openssl'
 
 # Create the array with all the info
 data = {
@@ -25,7 +26,7 @@ data = {
 
 url = "https://www.ufrgs.br/prae/cardapio-ru/"
 
-# Function to fetch a URL with retry logic
+# Function to fetch a URL with retry logic and improved SSL handling
 def fetch_with_retry(url, max_retries=3, timeout=30)
   retries = 0
   
@@ -33,16 +34,30 @@ def fetch_with_retry(url, max_retries=3, timeout=30)
     uri = URI(url)
     response = nil
     
-    # Configure Net::HTTP
-    Net::HTTP.start(uri.host, uri.port, 
-      use_ssl: uri.scheme == 'https',
-      open_timeout: timeout,
-      read_timeout: timeout
-    ) do |http|
-      request = Net::HTTP::Get.new(uri)
-      request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-      response = http.request(request)
+    # Configure Net::HTTP with more detailed SSL options
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = (uri.scheme == 'https')
+    http.open_timeout = timeout
+    http.read_timeout = timeout
+    
+    # Enhanced SSL configuration
+    if http.use_ssl?
+      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+      http.ssl_version = :TLSv1_2  # Force TLS 1.2
+      
+      # Set a more permissive cipher list
+      http.ciphers = 'DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2'
     end
+    
+    # Make the request
+    request = Net::HTTP::Get.new(uri)
+    request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    request['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+    request['Accept-Language'] = 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+    request['Cache-Control'] = 'no-cache'
+    request['Connection'] = 'keep-alive'
+    
+    response = http.request(request)
     
     if response.is_a?(Net::HTTPSuccess)
       return response.body
@@ -54,7 +69,7 @@ def fetch_with_retry(url, max_retries=3, timeout=30)
     retries += 1
     if retries < max_retries
       puts "Connection timed out. Retrying (#{retries}/#{max_retries})..."
-      sleep(2 * retries) # Progressive backoff
+      sleep(5 * retries)  # Increased delay between retries
       retry
     else
       raise "Failed to connect to #{url} after #{max_retries} attempts: #{e.message}"
@@ -63,7 +78,29 @@ def fetch_with_retry(url, max_retries=3, timeout=30)
     retries += 1
     if retries < max_retries
       puts "Error: #{e.message}. Retrying (#{retries}/#{max_retries})..."
-      sleep(2 * retries)
+      sleep(5 * retries)
+      retry
+    else
+      raise
+    end
+  end
+end
+
+# Fallback method using open-uri if Net::HTTP fails
+def fetch_with_open_uri(url, max_retries=3)
+  retries = 0
+  
+  begin
+    URI.open(url, 
+      'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      :read_timeout => 60,
+      :ssl_verify_mode => OpenSSL::SSL::VERIFY_NONE
+    ).read
+  rescue => e
+    retries += 1
+    if retries < max_retries
+      puts "Error with open-uri: #{e.message}. Retrying (#{retries}/#{max_retries})..."
+      sleep(5 * retries)
       retry
     else
       raise
@@ -298,10 +335,19 @@ begin
     begin
       # Use the new fetch_with_retry function to get HTML content
       puts "[GETTING DATA > #{city_name}] Fetching URL: #{url}"
-      html_content = fetch_with_retry(url, 5, 45)  # 5 attempts with 45 second timeout
+      
+      html_content = nil
+      begin
+        html_content = fetch_with_retry(url, 3, 60)  # 3 attempts with 60 second timeout
+      rescue => e
+        puts "Primary fetch method failed: #{e.message}. Trying alternative method..."
+        html_content = fetch_with_open_uri(url, 3)  # Try with open-uri as fallback
+      end
       
       # Parse the HTML content with Nokogiri
       page_data = Nokogiri::HTML(html_content)
+      
+      # Rest of your code...
 
       # Find all restaurant sections - these contain both restaurant info and menus
       restaurant_sections = page_data.css('section.elementor-section').select do |section|
