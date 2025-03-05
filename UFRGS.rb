@@ -235,89 +235,75 @@ def scrape_menu(ru_name, toggle_items, city)
       menu_table.css('tr:first-child td').each do |td|
         weekday_headers << clean_text(td.text)
       end
-      
       # Initialize meals for each weekday
-      meals = Array.new(weekday_headers.length) { [] }
+      meals = Array.new(weekday_headers.length) { [] }breakfast, 1 for lunch, 2 for dinner)
 
-      # Process each row in the table except for the header row
+      # Process each row in the table except for the header rownt[:meal_type].downcase.include?("jantar")
       menu_table.css('tr:not(:first-child)').each do |row|
-        row.css('td').each_with_index do |cell, index|
-          # Skip if index is out of range for the meals array
-          next if index >= meals.length
+        row.css('td').each_with_index do |cell, index|ontent[:meal_type].downcase.include?("café") || title_content[:meal_type].downcase.include?("cafe")
+          # Skip if index is out of range for the meals arrayeal_id = 0
+          next if index >= meals.length      end
           
           cell_text = clean_text(cell.text)
-          meals[index] << cell_text unless cell_text.empty?
-        end
-      end
+          meals[index] << cell_text unless cell_text.empty?|date_info, index|
+        end]
+      endweekday = date_info[1]
 
       # Get the meal type ID (0 for breakfast, 1 for lunch, 2 for dinner)
-      meal_id = 1 # Default to lunch
-      if title_content[:meal_type].downcase.include?("jantar")
-        meal_id = 2 
-      elsif title_content[:meal_type].downcase.include?("café") || title_content[:meal_type].downcase.include?("cafe")
+      meal_id = 1 # Default to lunche?("RECESSO") })
+      if title_content[:meal_type].downcase.include?("jantar") "[GETTING DATA > #{city} > #{ru_name}] #{weekday} (#{date_str}) is closed. Skipping..."
+        meal_id = 2 ext
+      elsif title_content[:meal_type].downcase.include?("café") || title_content[:meal_type].downcase.include?("cafe")end
         meal_id = 0
-      end
+      endrray bounds)
 
-      # Process each date and update the database
-      dates.each_with_index do |date_info, index|
-        date_str = date_info[0]
+      # Process each date and update the database "[GETTING DATA > #{city} > #{ru_name}] No meals found for #{weekday} (#{date_str}). Skipping..."
+      dates.each_with_index do |date_info, index|ext
+        date_str = date_info[0]        end
         weekday = date_info[1]
         
         # Skip if this weekday's meals contains "FECHADO" or "RECESSO"
         if index < meals.length && (meals[index].any? { |item| item.include?("FECHADO") || item.include?("RECESSO") })
-          puts "[GETTING DATA > #{city} > #{ru_name}] #{weekday} (#{date_str}) is closed. Skipping..."
+          puts "[GETTING DATA > #{city} > #{ru_name}] #{weekday} (#{date_str}) is closed. Skipping..."          secret = ENV['FIREBASE_KEY']
           next
         end
-        
-        # Skip if this date has no meals (outside the array bounds)
+        aise "Firebase credentials missing. Check BASE_URL and FIREBASE_KEY environment variables."
+        # Skip if this date has no meals (outside the array bounds)          end
         if index >= meals.length || meals[index].empty?
-          puts "[GETTING DATA > #{city} > #{ru_name}] No meals found for #{weekday} (#{date_str}). Skipping..."
+          puts "[GETTING DATA > #{city} > #{ru_name}] No meals found for #{weekday} (#{date_str}). Skipping..."          firebase = Firebase::Client.new(base_uri, secret)
           next
         end
-
+          current_menu = firebase.get("menus/#{city}/rus/#{ru_name}/menus/#{date_str}").body["menu"] rescue nil
         begin
           # Initialize Firebase
-          base_uri = ENV['BASE_URL']
+          base_uri = ENV['BASE_URL']          current_menu = [["Sem refeições disponíveis"],["Sem refeições disponíveis"],["Sem refeições disponíveis"]] if current_menu.nil?
           secret = ENV['FIREBASE_KEY']
-
-          if base_uri.nil? || secret.nil?
+ew meals
+          if base_uri.nil? || secret.nil?          current_menu[meal_id] = meals[index]
             raise "Firebase credentials missing. Check BASE_URL and FIREBASE_KEY environment variables."
           end
+ty}/rus/#{ru_name}/menus/#{date_str}", { 
+          firebase = Firebase::Client.new(base_uri, secret)ders[index], 
 
-          firebase = Firebase::Client.new(base_uri, secret)
-
-          # Retrieve the current menu from the database
-          current_menu = firebase.get("menus/#{city}/rus/#{ru_name}/menus/#{date_str}").body["menu"] rescue nil
+          # Retrieve the current menu from the database:timestamp => Time.now.to_i 
+          current_menu = firebase.get("menus/#{city}/rus/#{ru_name}/menus/#{date_str}").body["menu"] rescue nil          })
 
           # If the current menu doesn't exist, initialize it as an array of empty arrays
-          current_menu = [["Sem refeições disponíveis"],["Sem refeições disponíveis"],["Sem refeições disponíveis"]] if current_menu.nil?
+          current_menu = [["Sem refeições disponíveis"],["Sem refeições disponíveis"],["Sem refeições disponíveis"]] if current_menu.nil?TTING DATA > #{city} > #{ru_name}] Response: #{response.code}. Finished for #{date_str}."
 
-          # Update the current menu with the new meals
-          current_menu[meal_id] = meals[index]
+          # Update the current menu with the new mealsuts "[GETTING DATA > #{city} > #{ru_name}] Error updating database for #{date_str}: #{e.message}"
+          current_menu[meal_id] = meals[index]nd
 
           # Update the database
-          response = firebase.update("menus/#{city}/rus/#{ru_name}/menus/#{date_str}", { 
-            :weekday => weekday_headers[index], 
-            :menu => current_menu, 
-            :timestamp => Time.now.to_i 
-          })
+          response = firebase.update("menus/#{city}/rus/#{ru_name}/menus/#{date_str}", {  Error processing menu: #{e.message}"
+            :weekday => weekday_headers[index], uts e.backtrace.join("\n") if ENV['DEBUG']
+            :menu => current_menu, nd
+            :timestamp => Time.now.to_i nd
+          })end
 
-          # Log the response
+          # Log the responsen execution block
           puts "[GETTING DATA > #{city} > #{ru_name}] Response: #{response.code}. Finished for #{date_str}."
-        rescue => e
-          puts "[GETTING DATA > #{city} > #{ru_name}] Error updating database for #{date_str}: #{e.message}"
-        end
-      end
-    rescue => e
-      puts "[GETTING DATA > #{city} > #{ru_name}] Error processing menu: #{e.message}"
-      puts e.backtrace.join("\n") if ENV['DEBUG']
-    end
-  end
-end
-
-# Main execution block
-begin
-  puts "Starting UFRGS menu data collection..."
+        rescue => e  puts "Starting UFRGS menu data collection..."
 
   # Repeat for each city
   data.each do |city_name, city_data|
@@ -335,19 +321,10 @@ begin
     begin
       # Use the new fetch_with_retry function to get HTML content
       puts "[GETTING DATA > #{city_name}] Fetching URL: #{url}"
-      
-      html_content = nil
-      begin
-        html_content = fetch_with_retry(url, 3, 60)  # 3 attempts with 60 second timeout
-      rescue => e
-        puts "Primary fetch method failed: #{e.message}. Trying alternative method..."
-        html_content = fetch_with_open_uri(url, 3)  # Try with open-uri as fallback
-      end
+      html_content = fetch_with_retry(url, 5, 45)  # 5 attempts with 45 second timeout
       
       # Parse the HTML content with Nokogiri
       page_data = Nokogiri::HTML(html_content)
-      
-      # Rest of your code...
 
       # Find all restaurant sections - these contain both restaurant info and menus
       restaurant_sections = page_data.css('section.elementor-section').select do |section|
