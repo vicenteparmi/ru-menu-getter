@@ -7,6 +7,7 @@ require 'firebase'
 require 'open-uri'
 require 'nokogiri'
 require 'date'
+require 'net/http'
 
 # Create the array with all the info
 data = {
@@ -23,6 +24,52 @@ data = {
 }
 
 url = "https://www.ufrgs.br/prae/cardapio-ru/"
+
+# Function to fetch a URL with retry logic
+def fetch_with_retry(url, max_retries=3, timeout=30)
+  retries = 0
+  
+  begin
+    uri = URI(url)
+    response = nil
+    
+    # Configure Net::HTTP
+    Net::HTTP.start(uri.host, uri.port, 
+      use_ssl: uri.scheme == 'https',
+      open_timeout: timeout,
+      read_timeout: timeout
+    ) do |http|
+      request = Net::HTTP::Get.new(uri)
+      request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      response = http.request(request)
+    end
+    
+    if response.is_a?(Net::HTTPSuccess)
+      return response.body
+    else
+      raise "HTTP request failed with code #{response.code}"
+    end
+    
+  rescue Net::OpenTimeout, Net::ReadTimeout => e
+    retries += 1
+    if retries < max_retries
+      puts "Connection timed out. Retrying (#{retries}/#{max_retries})..."
+      sleep(2 * retries) # Progressive backoff
+      retry
+    else
+      raise "Failed to connect to #{url} after #{max_retries} attempts: #{e.message}"
+    end
+  rescue => e
+    retries += 1
+    if retries < max_retries
+      puts "Error: #{e.message}. Retrying (#{retries}/#{max_retries})..."
+      sleep(2 * retries)
+      retry
+    else
+      raise
+    end
+  end
+end
 
 # Function to extract the date range from a string
 def extract_date_range(string)
@@ -249,14 +296,10 @@ begin
     end
 
     begin
-      # Open URL and get the HTML content with proper error handling
-      html_content = URI.open(
-        url, 
-        read_timeout: 20,
-        open_timeout: 20,
-        'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-      )
-
+      # Use the new fetch_with_retry function to get HTML content
+      puts "[GETTING DATA > #{city_name}] Fetching URL: #{url}"
+      html_content = fetch_with_retry(url, 5, 45)  # 5 attempts with 45 second timeout
+      
       # Parse the HTML content with Nokogiri
       page_data = Nokogiri::HTML(html_content)
 
@@ -303,12 +346,8 @@ begin
         end
       end
       
-    rescue OpenURI::HTTPError => e
-      puts "[GETTING DATA > #{city_name}] HTTP Error: #{e.message}"
-    rescue SocketError => e
-      puts "[GETTING DATA > #{city_name}] Network error: #{e.message}"
     rescue => e
-      puts "[GETTING DATA > #{city_name}] Unexpected error: #{e.message}"
+      puts "[GETTING DATA > #{city_name}] Error fetching or processing data: #{e.message}"
       puts e.backtrace.join("\n") if ENV['DEBUG']
     end
   end
