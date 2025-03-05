@@ -2,6 +2,8 @@
 
 This project automates the process of fetching daily menus from various university restaurants (RUs) and performing data analysis on the collected data. The data is then sent to Firebase to be used in the CampusDine app.
 
+More information about the app can be found on the official [CampusDine page](https://vicx.dev.br/campusdine/).
+
 ## Features
 
 - **Daily Menu Fetching**: The script fetches daily menus from multiple universities, including UFABC, UFPR, and UFRGS.
