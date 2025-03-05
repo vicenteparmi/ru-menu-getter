@@ -3,6 +3,8 @@
 # Currently supports: RU01, RU02, RU03, RU04, RU05, RU06
 # Author: @vicenteparmi
 
+# Not working! Feel free to contribute and fix it!
+
 require 'firebase'
 require 'open-uri'
 require 'nokogiri'

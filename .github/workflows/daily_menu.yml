@@ -74,3 +74,5 @@ jobs:
         BASE_URL: ${{ secrets.BASE_URI }}
         GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
       run: ruby movedata_today.rb
+
+      
