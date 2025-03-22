@@ -31,7 +31,9 @@ jobs:
           ${{ runner.os }}-ruby-
 
     - name: Install system dependencies
-      run: sudo apt-get install -y libxml2 libxslt-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxml2 libxslt1-dev --fix-missing
 
     - name: Install dependencies
       run: MAKEFLAGS="-j$(nproc)" gem install nokogiri open-uri firebase google-cloud-firestore
@@ -75,4 +77,3 @@ jobs:
         GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
       run: ruby movedata_today.rb
 
-      
