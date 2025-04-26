@@ -1,2 +1,6 @@
 /.vscode
 /example
+.env
+*.env
+.env.local
+.env.*.local
