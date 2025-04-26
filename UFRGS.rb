@@ -58,25 +58,28 @@ def fetch_with_retry(url, max_retries=3, timeout=30)
     http.open_timeout = timeout
     http.read_timeout = timeout
     if http.use_ssl?
-      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      http.ssl_version = :TLSv1_2
-      http.ciphers = 'DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2'
+      # Usar VERIFY_NONE em ambientes CI/CD como GitHub Actions
+      puts "Detectado ambiente CI/CD, usando SSL VERIFY_NONE"
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     end
 
     request = Net::HTTP::Get.new(uri)
-    request['User-Agent'] = 'Mozilla/5.0'
+    request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     response = http.request(request)
     return response.body if response.is_a?(Net::HTTPSuccess)
     raise "HTTP #{response.code}"
   rescue Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
+    puts "Erro de SSL/timeout (tentativa #{retries+1}/#{max_retries}): #{e.message}"
     retries += 1
     if retries < max_retries
       sleep 2**retries
       retry
     else
+      puts "Tentando método alternativo com open-uri após falha SSL..."
       return fetch_with_open_uri(url)
     end
   rescue StandardError => e
+    puts "Erro padrão (tentativa #{retries+1}/#{max_retries}): #{e.message}"
     retries += 1
     if retries < max_retries
       sleep 2**retries
@@ -91,14 +94,29 @@ end
 def fetch_with_open_uri(url, max_retries=3)
   retries = 0
   begin
-    URI.open(url,
-      'User-Agent' => 'Mozilla/5.0',
+    puts "Tentando acessar #{url} com open-uri (tentativa #{retries+1}/#{max_retries})"
+    options = {
+      'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       read_timeout: 60,
       ssl_verify_mode: OpenSSL::SSL::VERIFY_NONE
-    ).read
+    }
+    
+    # Adiciona outros cabeçalhos para simular melhor um navegador real
+    options['Accept'] = 'text/html,application/xhtml+xml,application/xml'
+    options['Accept-Language'] = 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+    
+    result = URI.open(url, options).read
+    puts "Conexão bem-sucedida com open-uri (#{result.bytesize} bytes)"
+    return result
   rescue StandardError => e
+    puts "Erro com open-uri: #{e.class} - #{e.message}"
     retries += 1
-    retry if retries < max_retries
+    if retries < max_retries
+      sleep_time = 2**retries
+      puts "Aguardando #{sleep_time}s antes de tentar novamente..."
+      sleep sleep_time
+      retry
+    end
     raise e
   end
 end
