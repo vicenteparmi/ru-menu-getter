@@ -32,17 +32,17 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libxml2 libxslt1-dev --fix-missing
 
-    - name: Install dependencies
-      run: MAKEFLAGS="-j$(nproc)" gem install nokogiri open-uri firebase google-cloud-firestore
+    # - name: Install dependencies
+    #   run: MAKEFLAGS="-j$(nproc)" gem install nokogiri open-uri firebase google-cloud-firestore
 
-    - id: 'auth'
-      name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
+    # - id: 'auth'
+    #   name: 'Authenticate to Google Cloud'
+    #   uses: 'google-github-actions/auth@v2'
+    #   with:
+    #     credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
 
     - name: Curl forcing IPv4
-      run: curl --max-time 10 -4 -v https://seudominio.com
+      run: curl --max-time 10 -4 -v https://www.ufrgs.br/prae/cardapio-ru/
       
     - name: Test curl to site
       run: curl --max-time 10 -v https://www.ufrgs.br/prae/cardapio-ru/
