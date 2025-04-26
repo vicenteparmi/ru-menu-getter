@@ -41,10 +41,16 @@ jobs:
       with:
         credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
 
-    - name: Get UFRGS menus
-      env:
-        FIREBASE_KEY: ${{ secrets.SECRET }} 
-        BASE_URL: ${{ secrets.BASE_URI }}
-      run: ruby UFRGS.rb
-      continue-on-error: false
+    - name: Test curl to site
+      run: curl -v https://www.ufrgs.br/prae/cardapio-ru/
+
+    - name: Check public IP
+      run: curl https://ifconfig.me    
+      
+    # - name: Get UFRGS menus
+    #   env:
+    #     FIREBASE_KEY: ${{ secrets.SECRET }} 
+    #     BASE_URL: ${{ secrets.BASE_URI }}
+    #   run: ruby UFRGS.rb
+    #   continue-on-error: false
 
