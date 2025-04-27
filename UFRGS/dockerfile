@@ -1,0 +1,14 @@
+# Usa uma imagem oficial Ruby
+FROM ruby:3.4.3-slim
+
+# Define a pasta de trabalho
+WORKDIR /app
+
+# Copia o seu script para dentro do container
+COPY UFRGS.rb .
+
+# Se precisar de gems, você pode instalar aqui
+RUN gem install nokogiri open-uri firebase google-cloud-firestore
+
+# Comando para rodar o script
+CMD ["ruby", "UFRGS.rb"]
