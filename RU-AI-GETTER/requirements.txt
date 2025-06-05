@@ -1,0 +1,10 @@
+pdfplumber
+beautifulsoup4
+# Para integração com Ollama/MCP
+requests
+pytesseract
+Pillow
+# Para validação JSON
+jsonschema
+# Para interface web de revisão
+flask

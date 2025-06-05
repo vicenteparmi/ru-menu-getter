@@ -1,0 +1,23 @@
+# Ignorar arquivos de ambiente e cache
+.env
+__pycache__/
+scrapers/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.bak
+*.swp
+.DS_Store
+# Ignorar arquivos temporários de editor
+.vscode/
+.idea/
+# Ignorar arquivos de backup e logs
+*.log
+*.tmp
+jsons/
+venv/
+.venv/
+.pytest_cache/
+# Ignorar arquivos de testes e debug removidos
+*test_*.py
+debug_*.py

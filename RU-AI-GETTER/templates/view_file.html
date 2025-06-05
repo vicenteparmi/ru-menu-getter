@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ filename }} - Revisor de Cardápios</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+        
+        .sidebar {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #e9ecef;
+        }
+        
+        .main-content {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+        
+        .info-section {
+            margin-bottom: 30px;
+        }
+        
+        .info-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-item {
+            margin-bottom: 10px;
+            color: #666;
+        }
+        
+        .info-label {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #4CAF50;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .issues-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .issue-item {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .issue-item:before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+        }
+        
+        .day-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .day-header {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .day-content {
+            padding: 20px;
+        }
+        
+        .meal-section {
+            margin-bottom: 25px;
+        }
+        
+        .meal-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        .meal-items {
+            margin-left: 15px;
+        }
+        
+        .meal-item {
+            margin-bottom: 5px;
+            color: #555;
+            line-height: 1.4;
+        }
+        
+        .no-meal {
+            color: #dc3545;
+            font-style: italic;
+        }
+        
+        .actions {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 20px 30px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #f57c00;
+            transform: translateY(-1px);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: #4CAF50;
+        }
+        
+        .notification.error {
+            background: #dc3545;
+        }
+        
+        .notification.warning {
+            background: #ff9800;
+        }
+        
+        .notification.info {
+            background: #2196F3;
+        }
+        
+        .approval-status {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .approval-status.not-approved {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left-color: #ff9800;
+        }
+        
+        .edit-mode {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            color: #856404;
+            font-weight: 500;
+        }
+        
+        .meal-item-edit {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .meal-item-input {
+            flex: 1;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            min-width: auto;
+        }
+        
+        .meal-section-edit {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+        }
+        
+        .add-meal-section {
+            background: #e8f5e8;
+            border: 2px dashed #4CAF50;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .add-meal-section:hover {
+            background: #d4edda;
+        }
+        
+        .save-cancel-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .meal-item-edit {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 {{ filename.replace('.json', '').replace('_', ' ').title() }}</h1>
+            <a href="/" class="back-btn">← Voltar</a>
+        </div>
+        
+        <div class="content">
+            <div class="sidebar">
+                <div class="info-section">
+                    <div class="info-title">📁 Informações do Arquivo</div>
+                    <div class="info-item">
+                        <span class="info-label">Nome:</span> {{ file_info.name }}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tamanho:</span> {{ file_info.size }} bytes
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Modificado:</span> {{ file_info.modified }}
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-title">📊 Estatísticas</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.total_days }}</div>
+                            <div class="stat-label">Total de Dias</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.days_with_meals }}</div>
+                            <div class="stat-label">Dias com Refeições</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.total_meals }}</div>
+                            <div class="stat-label">Total de Pratos</div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if issues %}
+                <div class="info-section">
+                    <div class="info-title">⚠️ Problemas Encontrados</div>
+                    <div class="issues-list">
+                        {% for issue in issues %}
+                        <div class="issue-item">{{ issue }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="info-section">
+                    <div class="info-title">✅ Validação</div>
+                    <div style="color: #4CAF50; font-weight: 500;">Estrutura JSON válida!</div>
+                </div>
+                {% endif %}
+                
+                <!-- Status de Aprovação -->
+                {% set is_approved = data.values() | selectattr('approved', 'defined') | selectattr('approved') | list | length > 0 %}
+                <div class="approval-status {% if not is_approved %}not-approved{% endif %}">
+                    {% if is_approved %}
+                        ✅ Cardápio Aprovado
+                        {% if approval_date %}
+                            <div style="font-size: 0.9em; margin-top: 5px;">
+                                Aprovado em: {{ approval_date }}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        ⏳ Aguardando Aprovação
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <div id="edit-mode-indicator" class="edit-mode" style="display: none;">
+                    🔧 Modo de Edição Ativado - Faça suas alterações e clique em "Salvar" quando terminar
+                </div>
+                
+                <div id="view-mode">
+                    {% for day, day_data in data.items() %}
+                    <div class="day-card">
+                        <div class="day-header">
+                            📅 {{ day }} - {{ day_data.weekday }}
+                        </div>
+                        <div class="day-content">
+                            {% set meal_names = ['☕ Café da Manhã', '🍽️ Almoço', '🌙 Jantar'] %}
+                            {% for i in range(day_data.menu|length) %}
+                            <div class="meal-section">
+                                <div class="meal-title">
+                                    {% if i < meal_names|length %}
+                                        {{ meal_names[i] }}
+                                    {% else %}
+                                        🍴 Refeição {{ i + 1 }}
+                                    {% endif %}
+                                </div>
+                                <div class="meal-items">
+                                    {% set meal_period = day_data.menu[i] %}
+                                    {% if not meal_period or meal_period == ["Sem refeições disponíveis"] %}
+                                        <div class="meal-item no-meal">❌ Sem refeições disponíveis</div>
+                                    {% else %}
+                                        {% for item in meal_period %}
+                                            <div class="meal-item">• {{ item }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div id="edit-mode" style="display: none;">
+                    <!-- Conteúdo de edição será gerado dinamicamente -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button id="edit-btn" class="btn btn-warning" onclick="toggleEditMode()">
+                ✏️ Editar
+            </button>
+            <button class="btn btn-success" onclick="performAction('approve', '{{ filename }}')">
+                ✅ Aprovar
+            </button>
+            <button class="btn btn-danger" onclick="performAction('delete', '{{ filename }}')">
+                🗑️ Excluir
+            </button>
+            <button class="btn btn-warning" onclick="performAction('regenerate', '{{ filename }}')">
+                🔄 Obter Novamente
+            </button>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        // Dados originais do cardápio
+        const originalData = {{ data | tojson }};
+        let currentData = JSON.parse(JSON.stringify(originalData));
+        let isEditMode = false;
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+        
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editBtn = document.getElementById('edit-btn');
+            const viewMode = document.getElementById('view-mode');
+            const editMode = document.getElementById('edit-mode');
+            const editIndicator = document.getElementById('edit-mode-indicator');
+            
+            if (isEditMode) {
+                editBtn.innerHTML = '👁️ Visualizar';
+                editBtn.className = 'btn btn-secondary';
+                viewMode.style.display = 'none';
+                editMode.style.display = 'block';
+                editIndicator.style.display = 'block';
+                generateEditMode();
+            } else {
+                editBtn.innerHTML = '✏️ Editar';
+                editBtn.className = 'btn btn-warning';
+                viewMode.style.display = 'block';
+                editMode.style.display = 'none';
+                editIndicator.style.display = 'none';
+            }
+        }
+        
+        function generateEditMode() {
+            const editMode = document.getElementById('edit-mode');
+            let html = '';
+            
+            Object.keys(currentData).forEach(day => {
+                const dayData = currentData[day];
+                html += `
+                    <div class="day-card">
+                        <div class="day-header">
+                            📅 ${day} - ${dayData.weekday}
+                        </div>
+                        <div class="day-content">
+                `;
+                
+                const mealNames = ['☕ Café da Manhã', '🍽️ Almoço', '🌙 Jantar'];
+                
+                dayData.menu.forEach((mealPeriod, mealIndex) => {
+                    const mealName = mealIndex < mealNames.length ? mealNames[mealIndex] : `🍴 Refeição ${mealIndex + 1}`;
+                    
+                    html += `
+                        <div class="meal-section-edit">
+                            <div class="meal-title">
+                                ${mealName}
+                                <button class="btn btn-danger btn-small" onclick="removeMealPeriod('${day}', ${mealIndex})" style="float: right;">
+                                    🗑️ Remover Período
+                                </button>
+                            </div>
+                            <div class="meal-items" id="meal-${day}-${mealIndex}">
+                    `;
+                    
+                    if (!mealPeriod || mealPeriod.length === 0 || (mealPeriod.length === 1 && mealPeriod[0] === "Sem refeições disponíveis")) {
+                        html += `
+                            <div class="meal-item-edit">
+                                <input type="text" class="meal-item-input" placeholder="Digite um prato..." onchange="updateMealItem('${day}', ${mealIndex}, 0, this.value)">
+                                <button class="btn btn-danger btn-small" onclick="removeMealItem('${day}', ${mealIndex}, 0)">🗑️</button>
+                            </div>
+                        `;
+                    } else {
+                        mealPeriod.forEach((item, itemIndex) => {
+                            html += `
+                                <div class="meal-item-edit">
+                                    <input type="text" class="meal-item-input" value="${item}" onchange="updateMealItem('${day}', ${mealIndex}, ${itemIndex}, this.value)">
+                                    <button class="btn btn-danger btn-small" onclick="removeMealItem('${day}', ${mealIndex}, ${itemIndex})">🗑️</button>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    html += `
+                            </div>
+                            <button class="btn btn-success btn-small" onclick="addMealItem('${day}', ${mealIndex})" style="margin-top: 10px;">
+                                ➕ Adicionar Prato
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        <div class="add-meal-section" onclick="addMealPeriod('${day}')">
+                            ➕ Adicionar Novo Período de Refeição
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            
+            html += `
+                <div class="save-cancel-buttons">
+                    <button class="btn btn-success" onclick="saveChanges()">
+                        💾 Salvar Alterações
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelChanges()">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            `;
+            
+            editMode.innerHTML = html;
+        }
+        
+        function updateMealItem(day, mealIndex, itemIndex, value) {
+            if (!currentData[day].menu[mealIndex]) {
+                currentData[day].menu[mealIndex] = [];
+            }
+            
+            if (value.trim() === '') {
+                currentData[day].menu[mealIndex].splice(itemIndex, 1);
+            } else {
+                currentData[day].menu[mealIndex][itemIndex] = value.trim();
+            }
+            
+            // Se todos os itens foram removidos, adicionar placeholder
+            if (currentData[day].menu[mealIndex].length === 0) {
+                currentData[day].menu[mealIndex] = ["Sem refeições disponíveis"];
+            }
+        }
+        
+        function addMealItem(day, mealIndex) {
+            if (!currentData[day].menu[mealIndex]) {
+                currentData[day].menu[mealIndex] = [];
+            }
+            
+            // Remover placeholder se existir
+            if (currentData[day].menu[mealIndex].length === 1 && 
+                currentData[day].menu[mealIndex][0] === "Sem refeições disponíveis") {
+                currentData[day].menu[mealIndex] = [];
+            }
+            
+            currentData[day].menu[mealIndex].push('');
+            generateEditMode();
+        }
+        
+        function removeMealItem(day, mealIndex, itemIndex) {
+            currentData[day].menu[mealIndex].splice(itemIndex, 1);
+            
+            // Se não sobrou nenhum item, adicionar placeholder
+            if (currentData[day].menu[mealIndex].length === 0) {
+                currentData[day].menu[mealIndex] = ["Sem refeições disponíveis"];
+            }
+            
+            generateEditMode();
+        }
+        
+        function addMealPeriod(day) {
+            currentData[day].menu.push(["Sem refeições disponíveis"]);
+            generateEditMode();
+        }
+        
+        function removeMealPeriod(day, mealIndex) {
+            if (currentData[day].menu.length > 1) {
+                currentData[day].menu.splice(mealIndex, 1);
+                generateEditMode();
+            } else {
+                showNotification('Não é possível remover o último período de refeição', 'warning');
+            }
+        }
+        
+        function saveChanges() {
+            showNotification('Salvando alterações...', 'info');
+            
+            fetch(`/api/edit/{{ filename }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(currentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Alterações salvas com sucesso!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Erro ao salvar: ' + error, 'error');
+            });
+        }
+        
+        function cancelChanges() {
+            currentData = JSON.parse(JSON.stringify(originalData));
+            toggleEditMode();
+            showNotification('Alterações canceladas', 'info');
+        }
+        
+        function performAction(action, filename) {
+            const messages = {
+                approve: 'Aprovando cardápio...',
+                delete: 'Excluindo cardápio...',
+                regenerate: 'Regenerando cardápio...'
+            };
+            
+            showNotification(messages[action], 'info');
+            
+            fetch(`/api/${action}/${filename}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    if (action === 'delete') {
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                    } else if (action === 'approve') {
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    }
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Erro de conexão: ' + error, 'error');
+            });
+        }
+        
+    </script>
+</body>
+</html>
