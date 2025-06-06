@@ -1,6 +1,33 @@
 # Arquivo principal para orquestrar a coleta e processamento de dados dos RUs.
 
+# --- Bloco para garantir ambiente virtual e dependências essenciais ---
+import sys
+import subprocess
 import os
+
+venv_path = os.path.join(os.path.dirname(__file__), '.venv')
+activate_path = os.path.join(venv_path, 'bin', 'activate_this.py')
+
+# Cria o ambiente virtual se não existir
+if not os.path.isdir(venv_path):
+    print('[INFO] Criando ambiente virtual (.venv)...')
+    subprocess.run([sys.executable, '-m', 'venv', venv_path], check=True)
+
+# Ativa o ambiente virtual (para scripts Python)
+if os.environ.get('VIRTUAL_ENV') != venv_path:
+    activate_this = os.path.join(venv_path, 'bin', 'activate_this.py')
+    if os.path.exists(activate_this):
+        with open(activate_path) as f:
+            exec(f.read(), {'__file__': activate_this})
+
+# Garante que o pacote requests está instalado
+try:
+    import requests
+except ImportError:
+    print('[INFO] Instalando pacote requests...')
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'requests'])
+# --- Fim do bloco ambiente virtual ---
+
 import json
 from datetime import datetime
 
