@@ -26,6 +26,15 @@ try:
 except ImportError:
     pass
 
+def is_menu_fully_unavailable(menu):
+    """Retorna True se todas as refeições do dia forem ['Sem refeições disponíveis']."""
+    if not isinstance(menu, list) or len(menu) != 3:
+        return False
+    return all(
+        isinstance(period, list) and len(period) == 1 and period[0] == "Sem refeições disponíveis"
+        for period in menu
+    )
+
 def upload_menu_to_firebase(menu_data: Dict[str, Any], ru_name: str, city: str = "ufsc", use_archive: bool = False) -> bool:
     """
     Faz upload de cardápio para o Firebase seguindo exatamente o padrão do UFPR.rb
@@ -67,6 +76,11 @@ def upload_menu_to_firebase(menu_data: Dict[str, Any], ru_name: str, city: str =
     
     try:
         for date_str, day_data in menu_data.items():
+            # Novo filtro: pular datas com todas as refeições indisponíveis
+            menu = day_data.get('menu', [])
+            if is_menu_fully_unavailable(menu):
+                print(f"[GETTING DATA > {city} > {ru_name}] Dia {date_str} ignorado: todas as refeições indisponíveis.")
+                continue
             total_count += 1
             
             # Validar formato da data (YYYY-MM-DD)
