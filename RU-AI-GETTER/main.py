@@ -31,6 +31,14 @@ except ImportError:
 import json
 from datetime import datetime
 
+# Diretórios de trabalho
+DOWNLOADS_DIR = os.path.join(os.path.dirname(__file__), "downloaded_files")
+JSONS_DIR = os.path.join(os.path.dirname(__file__), "jsons")
+
+# Garante que os diretórios existem
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+os.makedirs(JSONS_DIR, exist_ok=True)
+
 from scrapers import (
     BlumenauScraper,
     CuritibanosScraper,
@@ -301,8 +309,8 @@ def prompt_user_options():
     rus_disponiveis = [
         ("Blumenau", BlumenauScraper),
         ("Curitibanos", CuritibanosScraper),
-        ("Florianópolis CCA", FlorianopolisCCAScraper),
-        ("Florianópolis Trindade", FlorianopolisTrindadeScraper),
+        ("CCA", FlorianopolisCCAScraper),
+        ("Trindade", FlorianopolisTrindadeScraper),
         ("Joinville", JoinvilleScraper),
     ]
     print("\nSelecione os RUs a serem processados (ex: 1,3,5 ou q para abandonar):")

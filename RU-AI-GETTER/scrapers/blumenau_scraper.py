@@ -1,12 +1,14 @@
 # Scraper para o RU de Blumenau
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from PIL import Image
 import pytesseract
 import io
 import re
 import os
+from datetime import datetime
+from urllib.parse import urljoin
 from .base_scraper import RestaurantScraper
 
 class BlumenauScraper(RestaurantScraper):
@@ -28,9 +30,9 @@ class BlumenauScraper(RestaurantScraper):
                 image = Image.open(io.BytesIO(resp.content))
                 # Salva a imagem para uso posterior (ex: IA multimodal)
                 try:
-                    import os
-                    image_path = os.path.join(os.path.dirname(__file__), '..', f'cardapio_blumenau.png')
-                    image.save(image_path)
+                    saved_path = self.save_file(resp.content, 'cardapio_blumenau.png', 'binary')
+                    if saved_path:
+                        print(f"[DEBUG] Imagem salva em: {saved_path}")
                 except Exception as e:
                     print(f"[DEBUG] Falha ao salvar imagem: {e}")
                 text = pytesseract.image_to_string(image, lang='por')
@@ -41,24 +43,24 @@ class BlumenauScraper(RestaurantScraper):
                 continue
         # Busca imagens que provavelmente são cardápio
         img_tags = soup.find_all('img')
-        cardapio_imgs = [img for img in img_tags if img.get('src') and ('cardapio' in img['src'].lower() or 'menu' in img['src'].lower())]
-        imgs_to_try = cardapio_imgs if cardapio_imgs else img_tags
+        cardapio_imgs = [img for img in img_tags if isinstance(img, Tag) and img.get('src') and ('cardapio' in str(img.get('src', '')).lower() or 'menu' in str(img.get('src', '')).lower())]
+        imgs_to_try = cardapio_imgs if cardapio_imgs else [img for img in img_tags if isinstance(img, Tag)]
         for img in imgs_to_try:
             img_url = img.get('src')
             if not img_url or img_url in tried_urls:
                 continue
             tried_urls.add(img_url)
-            if not img_url.startswith('http'):
-                img_url = requests.compat.urljoin(self.BASE_URL, img_url)
+            if not str(img_url).startswith('http'):
+                img_url = urljoin(self.BASE_URL, str(img_url))
             try:
-                resp = requests.get(img_url)
+                resp = requests.get(str(img_url))
                 resp.raise_for_status()
                 image = Image.open(io.BytesIO(resp.content))
                 # Salva a imagem para uso posterior (ex: IA multimodal)
                 try:
-                    import os
-                    image_path = os.path.join(os.path.dirname(__file__), '..', f'cardapio_blumenau.png')
-                    image.save(image_path)
+                    saved_path = self.save_file(resp.content, 'cardapio_blumenau.png', 'binary')
+                    if saved_path:
+                        print(f"[DEBUG] Imagem salva em: {saved_path}")
                 except Exception as e:
                     print(f"[DEBUG] Falha ao salvar imagem: {e}")
                 text = pytesseract.image_to_string(image, lang='por')
@@ -87,8 +89,4 @@ class BlumenauScraper(RestaurantScraper):
         """
         Retorna o caminho da última imagem salva do cardápio, se existir.
         """
-        import os
-        image_path = os.path.join(os.path.dirname(__file__), '..', f'cardapio_blumenau.png')
-        if os.path.exists(image_path):
-            return image_path
-        return None
+        return self.get_latest_download('cardapio_blumenau_*.png')

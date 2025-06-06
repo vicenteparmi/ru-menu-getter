@@ -5,3 +5,6 @@
 .env.local
 .env.*.local
 .venv
+
+# Arquivos baixados pelos scrapers
+RU-AI-GETTER/downloaded_files/
