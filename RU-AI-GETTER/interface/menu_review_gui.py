@@ -15,6 +15,13 @@ import threading
 import subprocess
 import sys
 
+# Importar o módulo de upload para Firebase
+try:
+    from core.firebase_uploader import upload_menu_to_firebase, upload_approved_menus, test_firebase_connection
+    FIREBASE_AVAILABLE = True
+except ImportError:
+    FIREBASE_AVAILABLE = False
+
 class MenuReviewGUI:
     def __init__(self, root):
         self.root = root
@@ -38,7 +45,7 @@ class MenuReviewGUI:
     def create_widgets(self):
         # Frame principal
         main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame.grid(row=0, column=0, sticky="nsew")
         
         # Configurar redimensionamento
         self.root.columnconfigure(0, weight=1)
@@ -53,14 +60,14 @@ class MenuReviewGUI:
         
         # Frame de controles
         controls_frame = ttk.Frame(main_frame)
-        controls_frame.grid(row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
+        controls_frame.grid(row=1, column=0, columnspan=3, sticky="we", pady=(0, 10))
         controls_frame.columnconfigure(1, weight=1)
         
         # Lista de arquivos
         ttk.Label(controls_frame, text="Arquivo:").grid(row=0, column=0, padx=(0, 10))
         
         self.file_combo = ttk.Combobox(controls_frame, state="readonly")
-        self.file_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
+        self.file_combo.grid(row=0, column=1, sticky="we", padx=(0, 10))
         self.file_combo.bind('<<ComboboxSelected>>', self.on_file_selected)
         
         # Botão atualizar lista
@@ -70,29 +77,29 @@ class MenuReviewGUI:
         
         # Frame de conteúdo
         content_frame = ttk.Frame(main_frame)
-        content_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S))
+        content_frame.grid(row=2, column=0, columnspan=3, sticky="nsew")
         content_frame.columnconfigure(1, weight=1)
         content_frame.rowconfigure(0, weight=1)
         
         # Painel esquerdo - informações do arquivo
         left_panel = ttk.LabelFrame(content_frame, text="Informações do Arquivo", padding="10")
-        left_panel.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
+        left_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         
         # Status do arquivo
         self.file_info_text = scrolledtext.ScrolledText(left_panel, width=40, height=15)
-        self.file_info_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.file_info_text.grid(row=0, column=0, sticky="nsew")
         left_panel.columnconfigure(0, weight=1)
         left_panel.rowconfigure(0, weight=1)
         
         # Painel direito - conteúdo do JSON
         right_panel = ttk.LabelFrame(content_frame, text="Conteúdo do Cardápio", padding="10")
-        right_panel.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
+        right_panel.grid(row=0, column=1, sticky="nsew")
         right_panel.columnconfigure(0, weight=1)
         right_panel.rowconfigure(0, weight=1)
         
         # Visualizador do JSON
         self.json_display = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD)
-        self.json_display.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.json_display.grid(row=0, column=0, sticky="nsew")
         
         # Frame de ações
         actions_frame = ttk.Frame(main_frame)
@@ -113,12 +120,18 @@ class MenuReviewGUI:
         
         self.validate_all_btn = ttk.Button(actions_frame, text="🔍 Validar Todos", 
                                           command=self.validate_all_files)
-        self.validate_all_btn.grid(row=0, column=3)
+        self.validate_all_btn.grid(row=0, column=3, padx=(0, 10))
+        
+        # Botão de upload para o Firebase (sempre visível)
+        self.upload_btn = ttk.Button(actions_frame, text="📤 Upload Firebase", 
+                                    command=self.upload_approved_menus, style='Upload.TButton')
+        self.upload_btn.grid(row=0, column=4)
         
         # Configurar estilos para botões
         style = ttk.Style()
         style.configure('Success.TButton', foreground='darkgreen')
         style.configure('Danger.TButton', foreground='darkred')
+        style.configure('Upload.TButton', foreground='darkblue')
         style.configure('Heading.TLabel', font=('TkDefaultFont', 16, 'bold'))
         
         # Status bar
@@ -126,7 +139,7 @@ class MenuReviewGUI:
         self.status_var.set("Pronto")
         status_bar = ttk.Label(main_frame, textvariable=self.status_var, 
                               relief=tk.SUNKEN, anchor=tk.W)
-        status_bar.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
+        status_bar.grid(row=4, column=0, columnspan=3, sticky="we", pady=(10, 0))
     
     def load_json_files(self):
         """Carrega a lista de arquivos JSON."""
@@ -308,6 +321,21 @@ class MenuReviewGUI:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(self.current_json_data, f, ensure_ascii=False, indent=2)
                 
+                # Perguntar se deseja fazer upload para Firebase
+                if FIREBASE_AVAILABLE:
+                    upload_response = messagebox.askyesno("Upload Firebase", 
+                                                         f"Cardápio '{file_name}' aprovado!\n\n"
+                                                         "Deseja fazer upload para o Firebase agora?")
+                    
+                    if upload_response:
+                        # Upload em thread separada
+                        ru_name = file_name.replace('.json', '')
+                        thread = threading.Thread(target=self._upload_single_file, 
+                                                 args=(self.current_json_data, ru_name, file_name))
+                        thread.daemon = True
+                        thread.start()
+                        return
+                
                 messagebox.showinfo("Sucesso", f"Cardápio '{file_name}' aprovado com sucesso!")
                 self.load_json_content(file_path)  # Recarregar para mostrar as mudanças
                 self.status_var.set(f"Cardápio aprovado: {file_name}")
@@ -397,6 +425,143 @@ class MenuReviewGUI:
         thread = threading.Thread(target=self._validate_all_worker)
         thread.daemon = True
         thread.start()
+    
+    def upload_approved_menus(self):
+        """Faz upload dos cardápios aprovados para o Firebase."""
+        if not FIREBASE_AVAILABLE:
+            messagebox.showerror("Erro", 
+                "Módulo Firebase não disponível.\nVerifique se o arquivo firebase_uploader.py existe e as dependências estão instaladas.")
+            return
+        
+        if not self.json_files:
+            messagebox.showwarning("Aviso", "Nenhum arquivo JSON encontrado")
+            return
+        
+        response = messagebox.askyesno("Confirmar Upload", 
+                                     "Deseja fazer upload dos cardápios APROVADOS para o Firebase?\n\n"
+                                     "⚠️ Apenas cardápios marcados como 'aprovados' serão enviados.\n"
+                                     "Certifique-se de que as variáveis BASE_URL e FIREBASE_KEY estão configuradas.")
+        
+        if response:
+            # Criar barra de progresso
+            if not hasattr(self, 'progress_bar'):
+                self.progress_bar = ttk.Progressbar(self.root, orient='horizontal', length=400, mode='determinate')
+                self.progress_bar.grid(row=2, column=0, columnspan=3, pady=10)
+            self.progress_bar['value'] = 0
+            self.progress_bar['maximum'] = len(self.json_files)
+            self.root.update_idletasks()
+            thread = threading.Thread(target=self._upload_worker_with_progress)
+            thread.daemon = True
+            thread.start()
+
+    def _upload_worker_with_progress(self):
+        try:
+            self.status_var.set("Testando conexão com Firebase...")
+            
+            # Testar conexão primeiro
+            if not test_firebase_connection():
+                self.root.after(0, lambda: messagebox.showerror("Erro", 
+                    "Falha na conexão com Firebase.\n\n"
+                    "Verifique:\n"
+                    "1. Variáveis BASE_URL e FIREBASE_KEY estão configuradas\n"
+                    "2. Conexão com internet\n"
+                    "3. Credenciais do Firebase"))
+                self.root.after(0, lambda: self.status_var.set("Falha na conexão"))
+                return
+            
+            self.status_var.set("Fazendo upload dos cardápios aprovados...")
+            
+            results = {}
+            json_files = list(self.json_files)
+            total = len(json_files)
+            for idx, json_file in enumerate(json_files, 1):
+                file_name = os.path.basename(json_file)
+                ru_name = file_name.replace('.json', '')
+                self.root.after(0, lambda f=file_name, i=idx, t=total: self.status_var.set(f"Enviando {f} ({i}/{t})..."))
+                
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    menu_data = json.load(f)
+                
+                # Filtrar apenas dados aprovados
+                approved_data = {date_str: day_data for date_str, day_data in menu_data.items() 
+                               if day_data.get('approved', False)}
+                
+                if not approved_data:
+                    results[file_name] = False
+                    continue
+                
+                # Fazer upload
+                success = upload_menu_to_firebase(approved_data, ru_name)
+                results[file_name] = success
+                
+                self.root.after(0, lambda v=idx: self.progress_bar.config(value=v))
+                self.root.update_idletasks()
+            
+            success_count = sum(1 for success in results.values() if success)
+            total_count = len(results)
+            
+            if success_count > 0:
+                message = f"Upload concluído!\n\n"
+                message += f"✅ Uploads bem-sucedidos: {success_count}\n"
+                message += f"❌ Falhas: {total_count - success_count}\n\n"
+                
+                if total_count - success_count > 0:
+                    message += "Arquivos com problemas:\n"
+                    for file_name, success in results.items():
+                        if not success:
+                            message += f"  • {file_name}\n"
+                
+                self.root.after(0, lambda: messagebox.showinfo("Upload Concluído", message))
+                self.root.after(0, lambda: self.status_var.set(f"Upload concluído: {success_count}/{total_count}"))
+            else:
+                self.root.after(0, lambda: messagebox.showwarning("Upload", 
+                    "Nenhum upload foi realizado.\n\n"
+                    "Possíveis causas:\n"
+                    "• Nenhum cardápio aprovado encontrado\n"
+                    "• Falhas de conexão\n"
+                    "• Dados inválidos"))
+                self.root.after(0, lambda: self.status_var.set("Nenhum upload realizado"))
+            
+            self.root.after(0, self.load_json_files)
+            self.root.after(0, lambda: self.progress_bar.grid_remove())
+        except Exception as e:
+            self.root.after(0, lambda: messagebox.showerror("Erro", f"Erro durante upload: {e}"))
+            self.root.after(0, lambda: self.status_var.set("Erro no upload"))
+            self.root.after(0, lambda: self.progress_bar.grid_remove())
+    
+    def _upload_single_file(self, menu_data, ru_name, file_name):
+        """Worker thread para upload de um arquivo individual."""
+        try:
+            self.status_var.set(f"Fazendo upload de {file_name}...")
+            
+            # Filtrar apenas dados aprovados
+            approved_data = {date_str: day_data for date_str, day_data in menu_data.items() 
+                           if day_data.get('approved', False)}
+            
+            if not approved_data:
+                self.root.after(0, lambda: messagebox.showwarning("Upload", 
+                    f"Nenhum cardápio aprovado encontrado em {file_name}"))
+                self.root.after(0, lambda: self.status_var.set("Nenhum dado para upload"))
+                return
+            
+            # Fazer upload
+            success = upload_menu_to_firebase(approved_data, ru_name)
+            
+            if success:
+                self.root.after(0, lambda: messagebox.showinfo("Upload Concluído", 
+                    f"Upload de '{file_name}' realizado com sucesso!\n"
+                    f"Enviados {len(approved_data)} dias de cardápio."))
+                self.root.after(0, lambda: self.status_var.set(f"Upload concluído: {file_name}"))
+            else:
+                self.root.after(0, lambda: messagebox.showerror("Erro no Upload", 
+                    f"Falha no upload de '{file_name}'.\n"
+                    "Verifique a conexão e as credenciais do Firebase."))
+                self.root.after(0, lambda: self.status_var.set("Falha no upload"))
+                
+        except Exception as e:
+            self.root.after(0, lambda: messagebox.showerror("Erro", 
+                f"Erro durante upload de {file_name}: {e}"))
+            self.root.after(0, lambda: self.status_var.set("Erro no upload"))
     
     def _validate_all_worker(self):
         """Worker thread para validação de todos os arquivos."""

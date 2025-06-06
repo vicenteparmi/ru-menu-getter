@@ -14,6 +14,13 @@ import sys
 import threading
 import time
 
+# Importar o módulo do Firebase uploader
+try:
+    from core.firebase_uploader import upload_menu_to_firebase, upload_approved_menus, test_firebase_connection
+    FIREBASE_AVAILABLE = True
+except ImportError:
+    FIREBASE_AVAILABLE = False
+
 # Corrigir caminho absoluto para a pasta de templates
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
@@ -400,6 +407,87 @@ def edit_file(filename):
         
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro ao salvar edições: {e}'}), 500
+
+@app.route('/api/upload_firebase', methods=['POST'])
+def upload_all_firebase():
+    """Fazer upload de todos os cardápios aprovados para o Firebase."""
+    def upload_worker():
+        try:
+            review_app.status = "Testando conexão com Firebase..."
+            
+            if not FIREBASE_AVAILABLE:
+                review_app.status = "Erro: Módulo Firebase não disponível"
+                return
+            
+            # Testar conexão primeiro
+            if not test_firebase_connection():
+                review_app.status = "Erro: Falha na conexão com Firebase"
+                return
+            
+            review_app.status = "Fazendo upload dos cardápios aprovados para Firebase..."
+            
+            # Fazer upload usando o módulo
+            results = upload_approved_menus(review_app.jsons_dir, use_archive=True)
+            
+            success_count = sum(1 for success in results.values() if success)
+            total_count = len(results)
+            
+            if success_count > 0:
+                review_app.status = f"Upload concluído: {success_count}/{total_count} cardápios enviados"
+            else:
+                review_app.status = "Nenhum cardápio foi enviado para o Firebase"
+                
+        except Exception as e:
+            review_app.status = f"Erro no upload: {e}"
+    
+    if not FIREBASE_AVAILABLE:
+        return jsonify({'success': False, 'message': 'Módulo Firebase não disponível. Verifique se o arquivo firebase_uploader.py existe e as dependências estão instaladas.'}), 500
+    
+    # Executar em thread separada
+    thread = threading.Thread(target=upload_worker)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({'success': True, 'message': 'Upload para Firebase iniciado. Acompanhe o progresso no status.'})
+
+@app.route('/api/upload_firebase/<filename>', methods=['POST'])
+def upload_single_firebase(filename):
+    """Fazer upload de um cardápio específico para o Firebase."""
+    try:
+        if not FIREBASE_AVAILABLE:
+            return jsonify({'success': False, 'message': 'Módulo Firebase não disponível. Verifique se o arquivo firebase_uploader.py existe e as dependências estão instaladas.'}), 500
+        
+        file_path = os.path.join(review_app.jsons_dir, filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'message': 'Arquivo não encontrado'}), 404
+        
+        # Testar conexão primeiro
+        if not test_firebase_connection():
+            return jsonify({'success': False, 'message': 'Falha na conexão com Firebase. Verifique as variáveis BASE_URL e FIREBASE_KEY.'}), 500
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            menu_data = json.load(f)
+        
+        # Filtrar apenas dados aprovados
+        approved_data = {date_str: day_data for date_str, day_data in menu_data.items() 
+                        if day_data.get('approved', False)}
+        
+        if not approved_data:
+            return jsonify({'success': False, 'message': f'Nenhum cardápio aprovado encontrado em {filename}'}), 400
+        
+        ru_name = filename.replace('.json', '')
+        success = upload_menu_to_firebase(approved_data, ru_name, use_archive=True)
+        
+        if success:
+            review_app.status = f"Upload concluído: {filename}"
+            return jsonify({'success': True, 'message': f'Upload de {filename} realizado com sucesso! Enviados {len(approved_data)} dias de cardápio.'})
+        else:
+            review_app.status = f"Falha no upload: {filename}"
+            return jsonify({'success': False, 'message': f'Falha no upload de {filename}. Verifique a conexão e as credenciais do Firebase.'}), 500
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro no upload: {e}'}), 500
 
 if __name__ == '__main__':
     # Criar templates se não existirem

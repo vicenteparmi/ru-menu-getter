@@ -495,6 +495,9 @@
                     <button class="btn btn-warning" onclick="validateAll()">
                         🔍 Validar Todos
                     </button>
+                    <button class="btn btn-primary" onclick="uploadAllToFirebase()" {% if not approved_files %}disabled{% endif %} title="Enviar cardápios aprovados para o Firebase">
+                        🔥 Upload Firebase
+                    </button>
                     <button class="btn btn-primary" onclick="location.reload()">
                         🔄 Atualizar
                     </button>
@@ -590,6 +593,49 @@
                     if (data.success) {
                         showNotification(data.message, 'success');
                         setTimeout(updateStatus, 2000);
+                    } else {
+                        showNotification('Erro: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Erro de conexão: ' + error, 'error');
+                });
+        }
+        
+        function uploadAllToFirebase() {
+            if (!confirm('Fazer upload dos cardápios APROVADOS para o Firebase?\n\n⚠️ Apenas cardápios marcados como "aprovados" serão enviados.\nCertifique-se de que as variáveis BASE_URL e FIREBASE_KEY estão configuradas.')) {
+                return;
+            }
+            
+            showNotification('Iniciando upload para o Firebase...', 'info');
+            fetch('/api/upload_firebase', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        setTimeout(updateStatus, 2000);
+                        setTimeout(() => location.reload(), 3000);
+                    } else {
+                        showNotification('Erro: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Erro de conexão: ' + error, 'error');
+                });
+        }
+        
+        function approveAll() {
+            if (!confirm('Aprovar todos os cardápios pendentes?')) {
+                return;
+            }
+            
+            showNotification('Aprovando todos os cardápios pendentes...', 'info');
+            fetch('/api/approve_all', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        setTimeout(() => location.reload(), 2000);
                     } else {
                         showNotification('Erro: ' + data.message, 'error');
                     }

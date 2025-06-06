@@ -517,6 +517,9 @@
             <button class="btn btn-success" onclick="performAction('approve', '{{ filename }}')">
                 ✅ Aprovar
             </button>
+            <button class="btn btn-primary" onclick="uploadToFirebase('{{ filename }}')" title="Enviar cardápio aprovado para o Firebase">
+                🔥 Upload Firebase
+            </button>
             <button class="btn btn-danger" onclick="performAction('delete', '{{ filename }}')">
                 🗑️ Excluir
             </button>
@@ -764,6 +767,29 @@
                     }
                 } else {
                     showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Erro de conexão: ' + error, 'error');
+            });
+        }
+        
+        function uploadToFirebase(filename) {
+            if (!confirm('Fazer upload do cardápio aprovado para o Firebase?\n\n⚠️ Apenas dados aprovados serão enviados.\nCertifique-se de que as variáveis BASE_URL e FIREBASE_KEY estão configuradas.')) {
+                return;
+            }
+            
+            showNotification('Fazendo upload para o Firebase...', 'info');
+            
+            fetch(`/api/upload_firebase/${filename}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Erro: ' + data.message, 'error');
                 }
             })
             .catch(error => {

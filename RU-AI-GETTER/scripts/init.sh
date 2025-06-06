@@ -28,7 +28,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # Instala dependências extras sempre necessárias
-for pkg in google-generativeai python-dotenv colorama; do
+for pkg in google-generativeai python-dotenv colorama beautifulsoup4 pdfplumber pytesseract flask; do
     echo "${c_blue}Instalando $pkg...${c_reset}"
     pip install --upgrade $pkg
     done
@@ -42,4 +42,4 @@ fi
 echo "${c_green}Ambiente pronto!${c_reset}"
 
 echo "${c_magenta}Executando o script principal (main.py)...${c_reset}"
-python3 main.py
+python3 RU-AI-GETTER/main.py
