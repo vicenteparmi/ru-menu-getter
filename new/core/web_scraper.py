@@ -36,6 +36,14 @@ class WebScraper:
             'texts': []
         }
 
+        # Limpa a pasta de arquivos antes de iniciar o scrape
+        folder = self.save_params.get('folder', 'downloaded_files')
+        if os.path.exists(folder):
+            for f in os.listdir(folder):
+                file_path = os.path.join(folder, f)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+
         if self.scrape_type == 'pdf':
             links = soup.find_all('a', href=True)
             pdf_links = []
@@ -64,12 +72,16 @@ class WebScraper:
                 result['files'].append(path)
 
         elif self.scrape_type == 'image':
-            # Busca imagens apenas dentro da seção principal, se content_selector estiver definido
-            if self.content_selector:
-                content_section = soup.select_one(self.content_selector)
-                img_tags = content_section.find_all('img') if content_section else []
-            else:
-                img_tags = soup.find_all('img')
+            # Limpa a pasta de arquivos antes de iniciar o scrape
+            folder = self.save_params.get('folder', 'downloaded_files')
+            if os.path.exists(folder):
+                for f in os.listdir(folder):
+                    file_path = os.path.join(folder, f)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
+            # Busca imagens apenas dentro do <article> principal
+            article = soup.find('article')
+            img_tags = article.find_all('img') if isinstance(article, Tag) else []
             img_links = []
             for img in img_tags:
                 if isinstance(img, Tag):

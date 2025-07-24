@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 from check_last_menu_date import get_last_menu_date
+from web_scraper import WebScraper
+from ai_parse import format_menu_ai
 
 # Configuração de execução dos scrapers por frequência
 SCRAPER_FREQUENCY_CONFIG = {
     "mensal": lambda today: today.day == 1,
-    "semanal": lambda today: today.weekday() == 0,  # Segunda-feira
+    "semanal": lambda today: True, # today.weekday() == 0,  # Segunda-feira
     "diario": lambda today: True
 }
-from web_scraper import WebScraper
 
 # Lista de scrapers configurados
 SITES = [
@@ -19,7 +20,7 @@ SITES = [
         "ru_name": "blumenau",
         "save_params": {"folder": "downloaded_files/blumenau"},
         "selection_mode": "last",
-        "update_frequency": "diario",
+        "update_frequency": "semanal",
         "content_selector": "article"
     },
     {
@@ -29,8 +30,9 @@ SITES = [
         "city_code": "ufsc-joi",
         "ru_name": "joinville",
         "save_params": {"folder": "downloaded_files/joinville"},
-        "selection_mode": "first",
-        "update_frequency": "diario"
+        "selection_mode": "last",
+        "update_frequency": "semanal",
+        "content_selector": "article"
     },
     {
         "name": "curitibanos",
@@ -39,8 +41,9 @@ SITES = [
         "city_code": "ufsc-cur",
         "ru_name": "curitibanos",
         "save_params": {"folder": "downloaded_files/curitibanos"},
-        "selection_mode": "by_date",
-        "update_frequency": "diario"
+        "selection_mode": "first",
+        "update_frequency": "mensal",
+        "content_selector": "article"
     },
     {
         "name": "florianopolis_cca",
@@ -49,8 +52,9 @@ SITES = [
         "city_code": "ufsc-flo",
         "ru_name": "cca",
         "save_params": {"folder": "downloaded_files/florianopolis_cca"},
-        "selection_mode": "last",
-        "update_frequency": "diario"
+        "selection_mode": "first",
+        "update_frequency": "semanal",
+        "content_selector": "article"
     },
     {
         "name": "florianopolis_trindade",
@@ -60,7 +64,8 @@ SITES = [
         "ru_name": "trindade",
         "save_params": {"folder": "downloaded_files/florianopolis_trindade"},
         "selection_mode": "last",
-        "update_frequency": "diario"
+        "update_frequency": "semanal",
+        "content_selector": "article"
     },
 ]
 
@@ -95,14 +100,32 @@ def run_all_scrapes():
         )
         print(f"[SCRAPE] Iniciando scrape para {site['ru_name']}...")
         result = scraper.scrape()
-        results[site['ru_name']] = result
         print(f"[SCRAPE] Finalizado {site['ru_name']}: {result}")
+
+        # Extrai conteúdo, pdfs e imagens do resultado do scrape
+        content_text = result.get('text') if isinstance(result, dict) else str(result)
+        pdfs = result.get('pdfs') if isinstance(result, dict) else []
+        images = result.get('images') if isinstance(result, dict) else []
+
+        # Chama a IA para formatar o cardápio
+        print(f"[AI_PARSE] Formatando cardápio para {site['ru_name']}...")
+        menu_json = format_menu_ai(content_text, pdf_paths=pdfs, image_paths=images)
+        results[site['ru_name']] = menu_json
+        print(f"[AI_PARSE] Resultado formatado {site['ru_name']}: {menu_json}")
     return results
 
 if __name__ == "__main__":
     all_results = run_all_scrapes()
-    # Aqui será feito o processamento e upload posteriormente
     print("[SCRAPE] Todos os resultados:")
     for ru, data in all_results.items():
         print(f"RU: {ru}")
         print(data)
+
+    # Para debug: exibe janela se is_debug=True
+    is_debug = True  # Altere para True para abrir a interface de visualização
+    if is_debug:
+        try:
+            from debug_view import show_results_window
+            show_results_window(all_results)
+        except Exception as e:
+            print(f"[UI] Erro ao exibir janela: {e}")
