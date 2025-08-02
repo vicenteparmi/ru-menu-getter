@@ -52,8 +52,8 @@ def moveData()
             end
             data['menu'] = result
 
-            # Define the path in Firestore (using archive path)
-            doc_ref = firestore.doc("archive/menus/#{city}/rus/#{ru}/menus/#{date}")
+            # Define the path in Firestore (using standard path structure)
+            doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
 
             # Write the data to Firestore
             doc_ref.set({ 'menus' => data })         
