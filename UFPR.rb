@@ -206,8 +206,8 @@ def scrape_menu(name, url, city)
 
     element[0] = date_str
 
-    # Update the database
-    response = firebase.set("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
+    # Update the database (directly to archive path)
+    response = firebase.set("archive/menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
 
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."

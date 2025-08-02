@@ -12,22 +12,20 @@ def moveData()
     firebase = Firebase::Client.new(base_uri, secret)
     firestore = Google::Cloud::Firestore.new project_id: ENV['GCLOUD_PROJECT_ID']
   
-    # Get the references to the old and new data
-    old_ref = firebase.get("menus")
-    new_ref = firebase.get("archive/menus")
+    # Get the references to the archive data
+    archive_ref = firebase.get("archive/menus")
   
-    # Get the data from the database for each city, then each RU, and copy all days to the archive
-    old_ref.body.each do |city, city_data|
+    # Get the data from the database for each city, then each RU, and copy all days to Firestore
+    archive_ref.body.each do |city, city_data|
       city_data["rus"].each do |ru, ru_data|
         begin
           ru_data["menus"].each do |date, date_data|
-            # Copy the data to the archive on Firebase Realtime Database
-            response = firebase.get("menus/#{city}/rus/#{ru}/menus/#{date}")
-            firebase.set("archive/menus/#{city}/rus/#{ru}/menus/#{date}", response.body)
+            # Get the data from archive path for Firestore
+            response = firebase.get("archive/menus/#{city}/rus/#{ru}/menus/#{date}")
 
-            # Copy the data to the archive on Firebase Firestore
+            # Copy the data to Firebase Firestore
             # Define the path in Firebase Realtime Database
-            path = "menus/#{city}/rus/#{ru}/menus/#{date}"
+            path = "archive/menus/#{city}/rus/#{ru}/menus/#{date}"
 
             # Get the data from Firebase
             data = response.body
@@ -54,8 +52,8 @@ def moveData()
             end
             data['menu'] = result
 
-            # Define the path in Firestore
-            doc_ref = firestore.doc("menus/#{city}/rus/#{ru}/menus/#{date}")
+            # Define the path in Firestore (using archive path)
+            doc_ref = firestore.doc("archive/menus/#{city}/rus/#{ru}/menus/#{date}")
 
             # Write the data to Firestore
             doc_ref.set({ 'menus' => data })         

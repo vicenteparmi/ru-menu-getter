@@ -135,8 +135,8 @@ def scrape_menu(name, url, city)
 
   # Check if the menu already exists for each date, if not, push new menu
   menu.each do |element|
-    # Update the database
-    response = firebase.set("menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
+    # Update the database (directly to archive path)
+    response = firebase.set("archive/menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
 
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."

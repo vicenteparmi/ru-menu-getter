@@ -44,12 +44,6 @@ jobs:
       with:
         credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
 
-    - name: Archive data
-      env:
-        FIREBASE_KEY: ${{ secrets.SECRET }} 
-        BASE_URL: ${{ secrets.BASE_URI }}
-      run: ruby movedata.rb
-
     - name: Get UFPR menus
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }} 
@@ -70,7 +64,7 @@ jobs:
     #   run: ruby UFRGS.rb
     #   continue-on-error: true
 
-    - name: Add today's menu to archive and firestore
+    - name: Add today's menu to firestore
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }} 
         BASE_URL: ${{ secrets.BASE_URI }}
