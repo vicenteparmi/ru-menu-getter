@@ -31,8 +31,6 @@ def moveData()
     begin
       # Get the references to the archive data
       archive_ref = firebase.get("archive/menus")
-      # Get the references to the archive data
-      archive_ref = firebase.get("archive/menus")
       
       # Validate that we got valid data
       unless archive_ref&.body&.is_a?(Hash)
@@ -153,6 +151,7 @@ def moveData()
           total_errors += 1
           next
         end
+      end
     end
   
     # Return the response

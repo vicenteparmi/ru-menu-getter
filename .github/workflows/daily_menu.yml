@@ -64,10 +64,10 @@ jobs:
     #   run: ruby UFRGS.rb
     #   continue-on-error: true
 
-    - name: Add today's menu to firestore
-      env:
-        FIREBASE_KEY: ${{ secrets.SECRET }} 
-        BASE_URL: ${{ secrets.BASE_URI }}
-        GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
-      run: ruby movedata_today.rb
+    # - name: Add today's menu to firestore
+    #   env:
+    #     FIREBASE_KEY: ${{ secrets.SECRET }} 
+    #     BASE_URL: ${{ secrets.BASE_URI }}
+    #     GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+    #   run: ruby movedata_today.rb
 
