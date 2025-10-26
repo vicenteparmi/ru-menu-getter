@@ -8,7 +8,8 @@ WORKDIR /app
 COPY UFRGS.rb .
 
 # Se precisar de gems, você pode instalar aqui
-RUN gem install nokogiri open-uri firebase google-cloud-firestore
+RUN gem install nokogiri firebase
 
 # Comando para rodar o script
 CMD ["ruby", "UFRGS.rb"]
+
