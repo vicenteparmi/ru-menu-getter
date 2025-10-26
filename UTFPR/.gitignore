@@ -1,0 +1,42 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+
+# Virtual environments
+.env
+.venv
+venv/
+env/
+
+# Arquivos sensíveis
+*.json
+!requirements.json
+campusdine-menu-*.json
+firebase-service-account.json
+service-account.json
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+.vscode/
+.idea/
+
+# Downloads e temporários
+downloads/
+downloaded_files/
+temp/
+test_menu.pdf
+*.pdf
+
+# Jupyter
+.ipynb_checkpoints/
