@@ -47,33 +47,46 @@ def extract_folder_id(drive_url: str) -> str:
     raise ValueError(f"Não foi possível extrair ID da pasta de: {drive_url}")
 
 
-def list_files_in_folder(folder_id: str) -> List[dict]:
+def get_drive_service():
+    """
+    Cria e retorna um serviço Drive autenticado.
+    Retorna None se não for possível autenticar.
+    """
+    if not HAVE_GDRIVE:
+        return None
+    
+    try:
+        sa_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or os.environ.get('GDRIVE_SERVICE_ACCOUNT_FILE')
+        SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+        
+        if sa_path and os.path.exists(sa_path):
+            print(f"[INFO] Usando service account: {sa_path}")
+            creds = service_account.Credentials.from_service_account_file(sa_path, scopes=SCOPES)
+            return build('drive', 'v3', credentials=creds, cache_discovery=False)
+        else:
+            raise ValueError(f"Service account não encontrado em: {sa_path}")
+    except Exception as e:
+        print(f"[AVISO] Não foi possível inicializar serviço Drive: {e}")
+        return None
+
+
+def list_files_in_folder(folder_id: str, drive_service=None) -> tuple:
     """
     Lista arquivos em uma pasta pública do Google Drive.
     
     Args:
         folder_id: ID da pasta do Google Drive
+        drive_service: Serviço Drive já inicializado (opcional)
         
     Returns:
-        Lista de dicionários com informações dos arquivos
+        Tuple (lista de arquivos, serviço Drive usado)
     """
     # Preferir usar a Google Drive API com credenciais (ADC ou service account)
     if HAVE_GDRIVE:
         try:
-            creds = None
-            # Priorizar service account file definido por variável de ambiente
-            sa_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or os.environ.get('GDRIVE_SERVICE_ACCOUNT_FILE')
-            
-            SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-            
-            if sa_path and os.path.exists(sa_path):
-                print(f"[INFO] Usando service account: {sa_path}")
-                creds = service_account.Credentials.from_service_account_file(sa_path, scopes=SCOPES)
-            
-            if creds is None:
-                raise ValueError(f"Service account não encontrado em: {sa_path}")
-
-            service = build('drive', 'v3', credentials=creds, cache_discovery=False)
+            service = drive_service or get_drive_service()
+            if service is None:
+                raise ValueError("Não foi possível obter serviço Drive")
 
             files = []
             page_token = None
@@ -88,7 +101,7 @@ def list_files_in_folder(folder_id: str) -> List[dict]:
                     break
             
             print(f"[OK] Encontrados {len(files)} arquivos via Drive API")
-            return files
+            return files, service
         except Exception as e:
             print(f"[ERRO] Falha ao listar via Drive API: {e}")
             print("[INFO] Tentando método alternativo (API Key / scraping)...")
@@ -104,11 +117,11 @@ def list_files_in_folder(folder_id: str) -> List[dict]:
         response = requests.get(api_url, params=params)
         response.raise_for_status()
         data = response.json()
-        return data.get('files', [])
+        return data.get('files', []), None
     except Exception as e:
         print(f"[ERRO] Falha ao listar arquivos: {e}")
         print("[INFO] Tentando método alternativo (scraping)...")
-        return list_files_scraping(folder_id)
+        return list_files_scraping(folder_id), None
 
 
 def list_files_scraping(folder_id: str) -> List[dict]:
@@ -205,30 +218,7 @@ def download_pdfs_from_folder(drive_url: str, dest_dir: str) -> List[str]:
     print(f"[INFO] ID da pasta: {folder_id}")
     
     print(f"[INFO] Listando arquivos...")
-    files = list_files_in_folder(folder_id)
-    
-    # Preparar serviço de download com drive API se disponível
-    drive_service = None
-    if HAVE_GDRIVE and files:
-        try:
-            creds = None
-            sa_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or os.environ.get('GDRIVE_SERVICE_ACCOUNT_FILE')
-            
-            SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-            
-            if sa_path and os.path.exists(sa_path):
-                creds = service_account.Credentials.from_service_account_file(sa_path, scopes=SCOPES)
-            else:
-                try:
-                    creds, _ = google.auth.default(scopes=SCOPES)
-                except Exception:
-                    creds = None
-            
-            if creds:
-                drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
-        except Exception as e:
-            print(f"[AVISO] Não foi possível inicializar serviço Drive para download: {e}")
-            drive_service = None
+    files, drive_service = list_files_in_folder(folder_id)
     
     if not files:
         print("[AVISO] Nenhum arquivo encontrado")

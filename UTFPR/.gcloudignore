@@ -1,0 +1,38 @@
+# Python cache
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+
+# Virtual environments
+.venv
+venv/
+env/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+.vscode/
+.idea/
+
+# Downloads e temporários
+downloads/
+temp/
+test_menu.pdf
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Git
+.git/
+.gitignore
+
+# NOTE: Do NOT ignore campusdine-menu-6d4386666d2c.json - needed for container

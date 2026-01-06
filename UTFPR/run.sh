@@ -34,7 +34,7 @@ export $(cat .env | grep -v '^#' | xargs)
 
 # Verificar dependências
 echo -e "${YELLOW}Verificando dependências Python...${NC}"
-if ! python3 -c "import google.generativeai, requests, dotenv" 2>/dev/null; then
+if ! python3 -c "import google.genai, requests, dotenv" 2>/dev/null; then
     echo -e "${YELLOW}Instalando dependências...${NC}"
     pip3 install -r requirements.txt
 fi

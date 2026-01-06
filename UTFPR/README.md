@@ -2,13 +2,19 @@
 
 Sistema automatizado para processar cardápios da UTFPR a partir de PDFs no Google Drive.
 
+## Otimizações 2026
+
+- ✅ **Economia de API**: Extração de texto local (pdfplumber) antes de enviar ao Gemini (~97% de economia em PDFs de texto).
+- ✅ **Saída Estruturada**: Uso de Pydantic para garantir JSON 100% válido para o Firebase.
+- ✅ **Ano Dinâmico**: Datas tratadas dinamicamente com base no ano atual.
+- ✅ **Filtro de Ruído**: Redução do `thinking_budget` para 2100 para menor latência e custo.
+
 ## Funcionalidades
 
 - ✅ Baixa PDFs automaticamente de pasta pública do Google Drive
-- ✅ Processa PDFs usando Google Gemini AI (sem necessidade de OCR)
-- ✅ Valida e estrutura dados em JSON
+- ✅ Processa PDFs usando Google Gemini AI (Texto-primeiro -> Inline -> File API)
+- ✅ Valida e estrutura dados com Pydantic
 - ✅ Envia automaticamente para Firebase
-- ✅ Suporta arquivos de qualquer tamanho (inline para <20MB, File API para maiores)
 
 ## Requisitos
 
@@ -24,104 +30,67 @@ Sistema automatizado para processar cardápios da UTFPR a partir de PDFs no Goog
 pip install -r requirements.txt
 ```
 
-2. Baixar credenciais do Firebase:
-   - Acesse [Firebase Console](https://console.firebase.google.com/)
-   - Selecione seu projeto (campusdine-menu)
-   - Vá em Configurações do Projeto > Contas de Serviço
-   - Clique em "Gerar nova chave privada"
-   - Baixe o arquivo JSON e salve como `firebase-service-account.json` na pasta UTFPR
-
-3. Configurar variáveis de ambiente (.env):
+2. Configurar variáveis de ambiente (`.env`):
 ```
 GEMINI_API_KEY=sua_chave_aqui
 BASE_URL=https://seu-firebase.firebaseio.com
 FIREBASE_KEY=sua_chave_firebase
-GOOGLE_APPLICATION_CREDENTIALS=firebase-service-account.json
 ```
 
-4. Executar:
+3. Executar:
 ```bash
 python main.py
 ```
 
-## Deploy no Google Cloud Run
+## Deploy no Google Cloud Run (Job)
 
-### Build e Push da imagem:
+O sistema está configurado para rodar como um **Cloud Run Job**.
 
-```bash
-# Build para arquitetura amd64
-docker build --platform linux/amd64 -t gcr.io/campusdine-menu/utfpr-menu-scraper:latest .
+### Como atualizar o container:
 
-# Push para GCR
-docker push gcr.io/campusdine-menu/utfpr-menu-scraper:latest
-```
-
-### Deploy como Cloud Run Job:
+Basta rodar o comando abaixo na pasta raiz:
 
 ```bash
 gcloud run jobs deploy utfpr-menu-scraper \
-  --image gcr.io/campusdine-menu/utfpr-menu-scraper:latest \
-  --region southamerica-east1 \
-  --max-retries 1 \
-  --memory 1Gi \
-  --cpu 1 \
-  --task-timeout 20m \
-  --set-env-vars GEMINI_API_KEY=sua_chave,BASE_URL=sua_url,FIREBASE_KEY=sua_chave
+  --source . \
+  --region southamerica-east1
 ```
 
-### Agendar execuções:
+Este comando irá zipar o código (respeitando o `.gcloudignore`), buildar a imagem no Cloud Build e atualizar o Job.
+
+### Como atualizar a chave de API expirada:
+
+Se a execução falhar por "API key expired", atualize as variáveis de ambiente do Job:
 
 ```bash
-# Segunda às 8h
-gcloud scheduler jobs create http utfpr-scraper-segunda-8h \
-  --location southamerica-east1 \
-  --schedule="0 8 * * 1" \
-  --time-zone="America/Sao_Paulo" \
-  --uri="https://southamerica-east1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/campusdine-menu/jobs/utfpr-menu-scraper:run" \
-  --http-method POST \
-  --oauth-service-account-email=1081471577742-compute@developer.gserviceaccount.com
+gcloud run jobs update utfpr-menu-scraper \
+  --region southamerica-east1 \
+  --set-env-vars="GEMINI_API_KEY=SUA_NOVA_CHAVE"
 ```
 
 ## Estrutura do Projeto
 
 ```
 UTFPR/
-├── main.py                      # Script principal
-├── google_drive_downloader.py   # Download de PDFs do Google Drive
-├── gemini_pdf_processor.py      # Processamento com Gemini AI
-├── requirements.txt             # Dependências Python
-├── Dockerfile                   # Container Docker
-└── README.md                    # Este arquivo
+├── main.py                    # Script principal (orquestração)
+├── gemini_pdf_processor.py    # Integração Gemini (estratégia de extração)
+├── models.py                  # Modelos Pydantic e validação de schema
+├── pdf_text_extractor.py      # Extração local de texto e tabelas
+├── google_drive_downloader.py # Download de PDFs do Google Drive
+├── utfpr_firebase_uploader.py # Upload de dados para Firebase
+├── Dockerfile                 # Configuração do container
+├── .gcloudignore              # Arquivos ignorados no deploy (importante!)
+└── requirements.txt           # Dependências Python
 ```
-
-## Como Funciona
-
-1. **Download**: Acessa pasta pública do Google Drive e baixa todos os PDFs
-2. **Processamento**: Cada PDF é enviado para Gemini AI que extrai o cardápio estruturado
-3. **Validação**: JSON é validado e corrigido automaticamente se necessário
-4. **Upload**: Dados são enviados para Firebase seguindo estrutura padrão
-
-## URL do Google Drive
-
-Pasta atual: https://drive.google.com/drive/folders/10GEyvT-ma0iOGz-ale1CpdPM5Lt2fdhQ
-
-Para alterar, edite a constante `DRIVE_FOLDER_URL` em `main.py`.
-
-## Logs
-
-O sistema gera logs coloridos detalhados de cada etapa:
-- 🔵 INFO: Informações gerais
-- 🟢 SUCCESS: Operações bem-sucedidas
-- 🟡 WARNING: Avisos
-- 🔴 ERROR: Erros
 
 ## Troubleshooting
 
-### "GEMINI_API_KEY não definida"
-Configure a variável de ambiente com sua chave da API Gemini.
+### "API key expired"
+O Cloud Run Job usa uma variável de ambiente. Veja a seção de deploy acima para saber como atualizar sem precisar de um novo deploy de código.
 
-### "Nenhum PDF encontrado no Google Drive"
-Verifique se a pasta está pública e a URL está correta.
+### "Texto extraído muito curto"
+Isso indica que o PDF é baseado em imagem (scan). O sistema detecta isso automaticamente e envia o arquivo completo para o Gemini processar via visão computacional.
 
-### "Falha ao validar JSON"
-O sistema tenta corrigir automaticamente. Se persistir, verifique o formato do PDF.
+### "Erro ao processar PDF inline"
+Certifique-se de que a biblioteca `google-genai` está instalada e que o modelo usado suporta o formato enviado.
+

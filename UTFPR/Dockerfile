@@ -13,6 +13,8 @@ COPY main.py .
 COPY google_drive_downloader.py .
 COPY gemini_pdf_processor.py .
 COPY utfpr_firebase_uploader.py .
+COPY models.py .
+COPY pdf_text_extractor.py .
 
 # Copiar service account JSON
 COPY campusdine-menu-6d4386666d2c.json .
