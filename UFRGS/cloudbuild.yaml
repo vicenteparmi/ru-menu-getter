@@ -1,0 +1,5 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'dockerfile', '-t', 'gcr.io/campusdine-menu/ufrgs-menu-scraper:latest', '.']
+images:
+  - 'gcr.io/campusdine-menu/ufrgs-menu-scraper:latest'

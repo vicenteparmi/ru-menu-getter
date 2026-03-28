@@ -80,7 +80,7 @@ def clean_response_text(text: str) -> str:
     return text.strip()
 
 
-def process_text_with_gemini(text_content: str, model_name: str = "gemini-flash-latest") -> str:
+def process_text_with_gemini(text_content: str, model_name: str = "gemini-3.1-flash-lite-preview") -> str:
     """
     Process extracted text with Gemini (cheaper than sending full PDF).
     
@@ -164,7 +164,7 @@ def upload_pdf_to_gemini(client: genai.Client, pdf_path: str, display_name: str 
     return file
 
 
-def process_pdf_with_gemini(pdf_path: str, model_name: str = "gemini-flash-latest") -> str:
+def process_pdf_with_gemini(pdf_path: str, model_name: str = "gemini-3.1-flash-lite-preview") -> str:
     """
     Processa um PDF usando a API do Gemini (File API para arquivos grandes).
     
@@ -225,7 +225,7 @@ def process_pdf_with_gemini(pdf_path: str, model_name: str = "gemini-flash-lates
     return text
 
 
-def process_pdf_inline(pdf_path: str, model_name: str = "gemini-flash-latest") -> str:
+def process_pdf_inline(pdf_path: str, model_name: str = "gemini-3.1-flash-lite-preview") -> str:
     """
     Processa um PDF com estratégia otimizada:
     1. Tenta extrair texto localmente primeiro (mais barato)

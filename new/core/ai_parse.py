@@ -13,7 +13,7 @@ def format_menu_ai(content_text, pdf_paths=None, image_paths=None, system_instru
         api_key=getattr(env_config, 'GEMINI_API_KEY', None)
     )
 
-    model = "gemini-2.5-flash-lite"
+    model = "gemini-3.1-flash-lite-preview"
 
     # Garante que content_text seja string
     if isinstance(content_text, list):
