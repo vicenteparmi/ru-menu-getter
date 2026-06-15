@@ -6,6 +6,7 @@
 require 'firebase'
 require 'open-uri'
 require 'nokogiri'
+require 'json'
 
 # Create the array with all the info
 data = {
@@ -65,13 +66,61 @@ data = {
   }
 }
 
+# Helper to open URL with proxy fallback
+def open_url_with_proxy_fallback(url)
+  # Try direct connection first
+  begin
+    puts "Attempting direct connection to #{url}..."
+    return URI.open(url, read_timeout: 5, open_timeout: 5)
+  rescue => e
+    puts "Direct connection failed: #{e.message}. Retrying with proxies..."
+  end
+
+  # Fetch proxy list from ProxyScrape
+  proxies = []
+  begin
+    proxy_list_url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=BR&ssl=all&anonymity=all"
+    proxy_data = URI.open(proxy_list_url, read_timeout: 5, open_timeout: 5).read
+    proxies = proxy_data.split("\n").map(&:strip).reject(&:empty?)
+    puts "Found #{proxies.length} proxies from ProxyScrape."
+  rescue => e
+    puts "Failed to fetch proxy list: #{e.message}."
+  end
+
+  # Fallback to Geonode if ProxyScrape failed or returned empty
+  if proxies.empty?
+    begin
+      geonode_url = "https://proxylist.geonode.com/api/proxy-list?limit=30&page=1&sort_by=lastChecked&sort_type=desc&country=BR&protocols=http"
+      geonode_data = URI.open(geonode_url, read_timeout: 5, open_timeout: 5).read
+      json = JSON.parse(geonode_data)
+      proxies = json['data'].map { |p| "#{p['ip']}:#{p['port']}" }
+      puts "Found #{proxies.length} proxies from Geonode."
+    rescue => e
+      puts "Failed to fetch proxies from Geonode: #{e.message}."
+    end
+  end
+
+  # Try each proxy
+  proxies.each_with_index do |proxy, index|
+    begin
+      puts "Trying proxy #{index + 1}/#{proxies.length}: http://#{proxy}..."
+      return URI.open(url, proxy: "http://#{proxy}", read_timeout: 10, open_timeout: 5)
+    rescue => e
+      puts "Proxy http://#{proxy} failed: #{e.message}."
+    end
+  end
+
+  # If everything failed, raise the last error
+  raise "Failed to fetch #{url} directly and through all #{proxies.length} proxies."
+end
+
 # Function to scrape the menu
 def scrape_menu(name, url, city)
   # Fetch the HTML content of the page
 
   puts "[GETTING DATA > #{city} > #{name}] Starting..."
 
-  html_content = URI.open(url)
+  html_content = open_url_with_proxy_fallback(url)
 
   # Parse the HTML content with Nokogiri
   doc = Nokogiri::HTML(html_content)
