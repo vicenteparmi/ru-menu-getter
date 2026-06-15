@@ -12,54 +12,54 @@ data = {
   "cwb" => {
     "rus" => {
       "ru-central" => {
-        "url" => "https://pra.ufpr.br/ru/ru-central/"
+        "url" => "https://proad.ufpr.br/ru/ru-central/"
       },
       "ru-politecnico" => {
-        "url" => "https://pra.ufpr.br/ru/ru-centro-politecnico/"
+        "url" => "https://proad.ufpr.br/ru/ru-centro-politecnico/"
       },
       "ru-botanico" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-jardim-botanico/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-jardim-botanico/"
       },
       "ru-agrarias" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-agrarias/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-agrarias/"
       }
     },
   },
   "mat" => {
     "rus" => {
       "ru-mat" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-matinhos/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-matinhos/"
       },
     },
   },
   "pal" => {
     "rus" => {
       "ru-pal" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-palotina/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-palotina/"
       },
     },
   },
   "pon" => {
     "rus" => {
       "ru-cem" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-cem/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-cem/"
       },
       "ru-mir" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-mirassol/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-mirassol/"
       }
     }
   },
   "tol" => {
     "rus" => {
       "ru-toledo" => {
-        "url" => "https://pra.ufpr.br/ru/6751-2/"
+        "url" => "https://proad.ufpr.br/ru/6751-2/"
       },
     }
   },
   "jan" => {
     "rus" => {
       "ru-jandaia" => {
-        "url" => "https://pra.ufpr.br/ru/cardapio-ru-jandaia-do-sul/"
+        "url" => "https://proad.ufpr.br/ru/cardapio-ru-jandaia-do-sul/"
       },
     }
   }
