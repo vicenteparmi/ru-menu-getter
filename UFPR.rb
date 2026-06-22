@@ -13,105 +13,134 @@ data = {
   "cwb" => {
     "rus" => {
       "ru-central" => {
-        "url" => "https://proad.ufpr.br/ru/ru-central/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-central/"
       },
       "ru-politecnico" => {
-        "url" => "https://proad.ufpr.br/ru/ru-centro-politecnico/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-centro-politecnico/"
       },
       "ru-botanico" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-jardim-botanico/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-jardim-botanico/"
       },
       "ru-agrarias" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-agrarias/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-agrarias/"
       }
     },
   },
   "mat" => {
     "rus" => {
       "ru-mat" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-matinhos/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-matinhos/"
       },
     },
   },
   "pal" => {
     "rus" => {
       "ru-pal" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-palotina/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-palotina/"
       },
     },
   },
   "pon" => {
     "rus" => {
       "ru-cem" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-cem/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-cem/"
       },
       "ru-mir" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-mirassol/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-mirassol/"
       }
     }
   },
   "tol" => {
     "rus" => {
       "ru-toledo" => {
-        "url" => "https://proad.ufpr.br/ru/6751-2/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-toledo/"
       },
     }
   },
   "jan" => {
     "rus" => {
       "ru-jandaia" => {
-        "url" => "https://proad.ufpr.br/ru/cardapio-ru-jandaia-do-sul/"
+        "url" => "https://p4e.ufpr.br/ru/cardapio-ru-jandaia-do-sul/"
       },
     }
   }
 }
+
+$proxies = nil
+
+def fetch_proxies
+  proxies = []
+
+  # 1. Fetch from ProxyScrape
+  begin
+    proxy_list_url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=BR&ssl=all&anonymity=all"
+    proxy_data = URI.open(proxy_list_url, read_timeout: 5, open_timeout: 5).read
+    ps_proxies = proxy_data.split("\n").map(&:strip).reject(&:empty?)
+    proxies.concat(ps_proxies)
+    puts "Fetched #{ps_proxies.length} proxies from ProxyScrape."
+  rescue => e
+    puts "Failed to fetch from ProxyScrape: #{e.message}."
+  end
+
+  # 2. Fetch from Geonode
+  begin
+    geonode_url = "https://proxylist.geonode.com/api/proxy-list?limit=50&page=1&sort_by=lastChecked&sort_type=desc&country=BR&protocols=http"
+    geonode_data = URI.open(geonode_url, read_timeout: 5, open_timeout: 5).read
+    json = JSON.parse(geonode_data)
+    gn_proxies = json['data'].map { |p| "#{p['ip']}:#{p['port']}" }
+    proxies.concat(gn_proxies)
+    puts "Fetched #{gn_proxies.length} proxies from Geonode."
+  rescue => e
+    puts "Failed to fetch from Geonode: #{e.message}."
+  end
+
+  $proxies = proxies.uniq.shuffle
+  puts "Total unique proxies loaded: #{$proxies.length}."
+end
 
 # Helper to open URL with proxy fallback
 def open_url_with_proxy_fallback(url)
   # Try direct connection first
   begin
     puts "Attempting direct connection to #{url}..."
-    return URI.open(url, read_timeout: 5, open_timeout: 5)
+    temp_content = URI.open(url, read_timeout: 5, open_timeout: 5)
+    html_str = temp_content.read
+    if html_str.downcase.include?("cardápio") || html_str.downcase.include?("almoço")
+      return html_str
+    else
+      puts "Direct connection returned page without menu content. Retrying with proxies..."
+    end
   rescue => e
     puts "Direct connection failed: #{e.message}. Retrying with proxies..."
   end
 
-  # Fetch proxy list from ProxyScrape
-  proxies = []
-  begin
-    proxy_list_url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=BR&ssl=all&anonymity=all"
-    proxy_data = URI.open(proxy_list_url, read_timeout: 5, open_timeout: 5).read
-    proxies = proxy_data.split("\n").map(&:strip).reject(&:empty?)
-    puts "Found #{proxies.length} proxies from ProxyScrape."
-  rescue => e
-    puts "Failed to fetch proxy list: #{e.message}."
-  end
-
-  # Fallback to Geonode if ProxyScrape failed or returned empty
-  if proxies.empty?
-    begin
-      geonode_url = "https://proxylist.geonode.com/api/proxy-list?limit=30&page=1&sort_by=lastChecked&sort_type=desc&country=BR&protocols=http"
-      geonode_data = URI.open(geonode_url, read_timeout: 5, open_timeout: 5).read
-      json = JSON.parse(geonode_data)
-      proxies = json['data'].map { |p| "#{p['ip']}:#{p['port']}" }
-      puts "Found #{proxies.length} proxies from Geonode."
-    rescue => e
-      puts "Failed to fetch proxies from Geonode: #{e.message}."
-    end
-  end
+  # Load proxies if not already loaded
+  fetch_proxies if $proxies.nil? || $proxies.empty?
 
   # Try each proxy
-  proxies.each_with_index do |proxy, index|
+  $proxies.each_with_index do |proxy, index|
     begin
-      puts "Trying proxy #{index + 1}/#{proxies.length}: http://#{proxy}..."
-      return URI.open(url, proxy: "http://#{proxy}", read_timeout: 10, open_timeout: 5)
+      puts "Trying proxy #{index + 1}/#{$proxies.length}: http://#{proxy}..."
+      temp_content = URI.open(url, proxy: "http://#{proxy}", read_timeout: 10, open_timeout: 5)
+      html_str = temp_content.read
+      
+      # Check if it looks like a valid page and not a block page
+      if html_str.downcase.include?("cardápio") || html_str.downcase.include?("almoço")
+        # Move this successful proxy to the front
+        $proxies.delete(proxy)
+        $proxies.unshift(proxy)
+        return html_str
+      else
+        puts "Proxy http://#{proxy} returned page without menu content. Trying next..."
+      end
     rescue => e
       puts "Proxy http://#{proxy} failed: #{e.message}."
     end
   end
 
-  # If everything failed, raise the last error
-  raise "Failed to fetch #{url} directly and through all #{proxies.length} proxies."
+  # If everything failed, clear proxies so they are re-fetched next time (or next run) and raise error
+  $proxies = nil
+  raise "Failed to fetch #{url} directly and through all proxies."
 end
 
 # Function to scrape the menu
