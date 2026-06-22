@@ -70,11 +70,12 @@ $proxies = nil
 
 def fetch_proxies
   proxies = []
+  user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
   # 1. Fetch from ProxyScrape
   begin
-    proxy_list_url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=BR&ssl=all&anonymity=all"
-    proxy_data = URI.open(proxy_list_url, read_timeout: 5, open_timeout: 5).read
+    proxy_list_url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=BR&ssl=all&anonymity=all"
+    proxy_data = URI.open(proxy_list_url, "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5).read
     ps_proxies = proxy_data.split("\n").map(&:strip).reject(&:empty?)
     proxies.concat(ps_proxies)
     puts "Fetched #{ps_proxies.length} proxies from ProxyScrape."
@@ -84,8 +85,8 @@ def fetch_proxies
 
   # 2. Fetch from Geonode
   begin
-    geonode_url = "https://proxylist.geonode.com/api/proxy-list?limit=50&page=1&sort_by=lastChecked&sort_type=desc&country=BR&protocols=http"
-    geonode_data = URI.open(geonode_url, read_timeout: 5, open_timeout: 5).read
+    geonode_url = "https://proxylist.geonode.com/api/proxy-list?limit=150&page=1&sort_by=lastChecked&sort_type=desc&country=BR&protocols=http"
+    geonode_data = URI.open(geonode_url, "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5).read
     json = JSON.parse(geonode_data)
     gn_proxies = json['data'].map { |p| "#{p['ip']}:#{p['port']}" }
     proxies.concat(gn_proxies)
@@ -100,10 +101,12 @@ end
 
 # Helper to open URL with proxy fallback
 def open_url_with_proxy_fallback(url)
+  user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
   # Try direct connection first
   begin
     puts "Attempting direct connection to #{url}..."
-    temp_content = URI.open(url, read_timeout: 5, open_timeout: 5)
+    temp_content = URI.open(url, "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5)
     html_str = temp_content.read
     if html_str.downcase.include?("cardápio") || html_str.downcase.include?("almoço")
       return html_str
@@ -121,7 +124,7 @@ def open_url_with_proxy_fallback(url)
   $proxies.each_with_index do |proxy, index|
     begin
       puts "Trying proxy #{index + 1}/#{$proxies.length}: http://#{proxy}..."
-      temp_content = URI.open(url, proxy: "http://#{proxy}", read_timeout: 10, open_timeout: 5)
+      temp_content = URI.open(url, proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 10, open_timeout: 5)
       html_str = temp_content.read
       
       # Check if it looks like a valid page and not a block page
