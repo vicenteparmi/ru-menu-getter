@@ -298,6 +298,9 @@ end
 # Convert the data hash to an array
 data_array = data.to_a
 
+# Track failures so we can report them at the end
+failed_rus = []
+
 # Repeat for each city
 data.each do |city|
   # Get the city name
@@ -325,8 +328,41 @@ data.each do |city|
     sleep(10)
     begin
       scrape_menu(ru_name, url, city_name)
-    rescue NoMethodError => e
-      puts "Error on the scrape function: #{e.message}. Skipping..."
+    rescue StandardError => e
+      puts "⚠️  [WARNING] Failed to scrape #{ru_name} (#{city_name}): #{e.class}: #{e.message}. Skipping to next RU..."
+      failed_rus << { city: city_name, ru: ru_name, url: url, error: "#{e.class}: #{e.message}" }
     end  
+  end
+end
+
+# Print summary of failures
+if failed_rus.empty?
+  puts "\n✅ All RUs scraped successfully!"
+else
+  puts "\n⚠️  [SUMMARY] #{failed_rus.length} RU(s) failed to scrape:"
+  failed_rus.each do |f|
+    puts "   - #{f[:ru]} (#{f[:city]}): #{f[:error]}"
+  end
+  puts "\nThe workflow completed for all other RUs. Review the failures above."
+
+  # Write failure report for GitHub Actions to pick up
+  timestamp = Time.now.strftime("%Y-%m-%d %H:%M:%S %Z")
+  report = "## UFPR Scraper — Partial Failure Report\n\n"
+  report += "**Date:** #{timestamp}\n\n"
+  report += "#{failed_rus.length} out of #{data.values.sum { |c| c['rus'].length }} RU(s) failed to scrape.\n"
+  report += "The remaining RUs were scraped successfully.\n\n"
+  report += "### Failed RUs\n\n"
+  report += "| RU | City | Error |\n|---|---|---|\n"
+  failed_rus.each do |f|
+    report += "| #{f[:ru]} | #{f[:city]} | `#{f[:error]}` |\n"
+  end
+  report += "\n> This issue was created automatically by the daily menu workflow.\n"
+
+  File.write("ufpr_failures.md", report)
+
+  # Signal to GitHub Actions that there were failures
+  if ENV['GITHUB_OUTPUT']
+    File.open(ENV['GITHUB_OUTPUT'], 'a') { |f| f.puts "has_failures=true" }
+    File.open(ENV['GITHUB_OUTPUT'], 'a') { |f| f.puts "failure_count=#{failed_rus.length}" }
   end
 end

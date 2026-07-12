@@ -9,6 +9,9 @@ on:
 jobs:
   update-database:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      issues: write
     
     timeout-minutes: 30
 
@@ -45,10 +48,26 @@ jobs:
         credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
 
     - name: Get UFPR menus
+      id: ufpr
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }} 
         BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby UFPR.rb
+      continue-on-error: true
+
+    - name: Notify UFPR scraping failures via GitHub Issue
+      if: always() && steps.ufpr.outputs.has_failures == 'true' || hashFiles('ufpr_failures.md') != ''
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [ ! -f ufpr_failures.md ]; then
+          echo "No failure report found. Skipping issue creation."
+          exit 0
+        fi
+        gh label create "scraper-failure" --color "D93F0B" --description "Automated alert from scraper" 2>/dev/null || true
+        TITLE="⚠️ UFPR Scraper: partial failure — $(date -u +'%Y-%m-%d')"
+        BODY=$(cat ufpr_failures.md)
+        gh issue create --title "$TITLE" --body "$BODY" --label "scraper-failure"
 
     - name: Get UFABC menus
       env:
