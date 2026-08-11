@@ -7,6 +7,13 @@ on:
     # UTFPR: Monday at 12:00 and Tuesday at 10:00 (America/Sao_Paulo).
     - cron: '0 15 * * 1'
     - cron: '0 13 * * 2'
+    # Unicamp (America/Sao_Paulo): Sunday 12:00; Monday 09:00 and 11:00;
+    # Tuesday 09:00; Thursday 09:00.
+    - cron: '0 15 * * 0'
+    - cron: '0 12 * * 1'
+    - cron: '0 14 * * 1'
+    - cron: '0 12 * * 2'
+    - cron: '0 12 * * 4'
   workflow_dispatch:
     inputs:
       target:
@@ -18,6 +25,7 @@ on:
           - all
           - daily
           - utfpr
+          - unicamp
 
 jobs:
   update-database:
@@ -105,6 +113,44 @@ jobs:
     #     BASE_URL: ${{ secrets.BASE_URI }}
     #     GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
     #   run: ruby movedata_today.rb
+
+  update-unicamp:
+    if: >-
+      (github.event_name == 'schedule' &&
+        (github.event.schedule == '0 15 * * 0' ||
+         github.event.schedule == '0 12 * * 1' ||
+         github.event.schedule == '0 14 * * 1' ||
+         github.event.schedule == '0 12 * * 2' ||
+         github.event.schedule == '0 12 * * 4')) ||
+      (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'unicamp'))
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    concurrency:
+      group: unicamp-menu-scraper
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4.1
+
+      - name: Install dependencies
+        run: gem install nokogiri --no-document
+
+      - name: Validate Unicamp menu parser
+        run: ruby test_unicamp.rb
+
+      - name: Get Unicamp menus
+        env:
+          FIREBASE_KEY: ${{ secrets.SECRET }}
+          BASE_URL: ${{ secrets.BASE_URI }}
+        run: ruby UNICAMP.rb
 
   update-utfpr:
     if: >-
