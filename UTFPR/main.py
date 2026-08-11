@@ -62,15 +62,17 @@ def process_pdf_menu(pdf_path: str) -> dict | None:
     is_valid, processed_json, errors = validate_menu_data(menu_json)
     
     if not is_valid:
-        log_warning(f"JSON com problemas encontrados: {len(errors)}")
+        log_error(f"JSON rejeitado pelo schema: {len(errors)} problema(s)")
         for error in errors[:3]:
-            log_warning(f"  - {error}")
-    
-    if processed_json:
-        menu_json = processed_json
+            log_error(f"  - {error}")
+        return None
+
+    if not processed_json:
+        log_error("JSON rejeitado pelo schema: nenhum dia válido encontrado")
+        return None
     
     log_success("JSON processado e validado com sucesso!")
-    return menu_json
+    return processed_json
 
 
 def main():

@@ -4,43 +4,65 @@ Pydantic models for UTFPR menu data structure.
 Ensures correct JSON format for Firebase database.
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import List, Dict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Dict, List, Literal
 from datetime import datetime
+
+
+Weekday = Literal[
+    "Segunda-Feira",
+    "Terça-Feira",
+    "Quarta-Feira",
+    "Quinta-Feira",
+    "Sexta-Feira",
+    "Sábado",
+    "Domingo",
+]
+
+WEEKDAYS_PT: tuple[Weekday, ...] = (
+    "Segunda-Feira",
+    "Terça-Feira",
+    "Quarta-Feira",
+    "Quinta-Feira",
+    "Sexta-Feira",
+    "Sábado",
+    "Domingo",
+)
 
 
 class DayMenu(BaseModel):
     """Schema for a single day's menu."""
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     menu: List[List[str]] = Field(
+        min_length=3,
+        max_length=3,
         description="Array of 3 meal periods: [café/lanche, almoço, jantar]. Each is a list of dishes."
     )
-    timestamp: int = Field(
-        default=0, 
+    timestamp: Literal[0] = Field(
+        default=0,
         description="Unix timestamp, will be set on upload"
     )
-    weekday: str = Field(
+    weekday: Weekday = Field(
         description="Day of week in Portuguese, e.g. 'Segunda-Feira'"
     )
     
     @field_validator('menu')
     @classmethod
     def validate_menu_structure(cls, v):
-        """Ensure menu has exactly 3 meal periods."""
-        if len(v) != 3:
-            # Pad with empty periods if needed
-            while len(v) < 3:
-                v.append(["Sem refeições disponíveis"])
+        """Ensure every meal period contains non-empty dish names."""
+        for period in v:
+            if not period:
+                raise ValueError("Each meal period must contain at least one item")
+            if any(not item.strip() for item in period):
+                raise ValueError("Meal items must be non-empty strings")
         return v
-    
-    @field_validator('weekday')
-    @classmethod
-    def capitalize_weekday(cls, v):
-        """Ensure weekday is properly capitalized."""
-        return v.title() if v else "Desconhecido"
 
 
 class WeeklyMenu(BaseModel):
     """Schema for a week's menu with dynamic date keys."""
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     days: Dict[str, DayMenu] = Field(
         description="Dictionary with date keys (YYYY-MM-DD) mapping to DayMenu objects"
     )
@@ -71,22 +93,32 @@ def get_menu_json_schema() -> dict:
                 "menu": {
                     "type": "array",
                     "description": "Array of 3 meal periods: [café/lanche, almoço, jantar]",
+                    "minItems": 3,
+                    "maxItems": 3,
                     "items": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "minItems": 1,
+                        "items": {
+                            "type": "string",
+                            "minLength": 1
+                        }
                     }
                 },
                 "timestamp": {
                     "type": "integer",
+                    "enum": [0],
                     "description": "Unix timestamp, always 0"
                 },
                 "weekday": {
                     "type": "string",
+                    "enum": list(WEEKDAYS_PT),
                     "description": "Day of week in Portuguese, e.g. 'Segunda-Feira'"
                 }
             },
-            "required": ["menu", "timestamp", "weekday"]
-        }
+            "required": ["menu", "timestamp", "weekday"],
+            "additionalProperties": False
+        },
+        "minProperties": 1
     }
 
 
@@ -102,14 +134,27 @@ def validate_menu_data(data: dict) -> tuple[bool, dict, list]:
     """
     errors = []
     processed = {}
+
+    if not isinstance(data, dict) or not data:
+        return False, {}, ["Menu must be a non-empty object keyed by YYYY-MM-DD dates"]
     
     for date_str, day_data in data.items():
         try:
             # Validate date format
-            datetime.strptime(date_str, "%Y-%m-%d")
+            menu_date = datetime.strptime(date_str, "%Y-%m-%d")
+
+            if not isinstance(day_data, dict):
+                raise ValueError("Day menu must be an object")
             
             # Validate and create DayMenu
             day_menu = DayMenu(**day_data)
+
+            expected_weekday = WEEKDAYS_PT[menu_date.weekday()]
+            if day_menu.weekday != expected_weekday:
+                raise ValueError(
+                    f"Weekday {day_menu.weekday!r} does not match {date_str}; expected {expected_weekday!r}"
+                )
+
             processed[date_str] = day_menu.model_dump()
             
         except ValueError as e:
