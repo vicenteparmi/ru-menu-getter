@@ -209,6 +209,7 @@ def process_pdf_with_gemini(pdf_path: str, model_name: str = DEFAULT_MODEL) -> s
     generate_content_config = get_generate_content_config()
     
     # Gerar conteúdo
+    print(f"[INFO] Gerando conteúdo com {model_name}...")
     response = client.models.generate_content(
         model=model_name,
         contents=contents,
@@ -276,6 +277,7 @@ def process_pdf_inline(pdf_path: str, model_name: str = DEFAULT_MODEL) -> str:
     generate_content_config = get_generate_content_config()
     
     # Gerar conteúdo
+    print(f"[INFO] Gerando conteúdo com {model_name}...")
     response = client.models.generate_content(
         model=model_name,
         contents=contents,
