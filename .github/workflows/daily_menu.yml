@@ -7,8 +7,13 @@ on:
     # UTFPR: Monday at 12:00 and Tuesday at 10:00 (America/Sao_Paulo).
     - cron: '0 15 * * 1'
     - cron: '0 13 * * 2'
-    # Unicamp: Monday at 12:00 and Thursday at 10:00 (America/Sao_Paulo).
-    - cron: '0 13 * * 4'
+    # Unicamp (America/Sao_Paulo): Sunday 12:00; Monday 09:00 and 11:00;
+    # Tuesday 09:00; Thursday 09:00.
+    - cron: '0 15 * * 0'
+    - cron: '0 12 * * 1'
+    - cron: '0 14 * * 1'
+    - cron: '0 12 * * 2'
+    - cron: '0 12 * * 4'
   workflow_dispatch:
     inputs:
       target:
@@ -112,7 +117,11 @@ jobs:
   update-unicamp:
     if: >-
       (github.event_name == 'schedule' &&
-        (github.event.schedule == '0 15 * * 1' || github.event.schedule == '0 13 * * 4')) ||
+        (github.event.schedule == '0 15 * * 0' ||
+         github.event.schedule == '0 12 * * 1' ||
+         github.event.schedule == '0 14 * * 1' ||
+         github.event.schedule == '0 12 * * 2' ||
+         github.event.schedule == '0 12 * * 4')) ||
       (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'unicamp'))
     runs-on: ubuntu-22.04
     timeout-minutes: 10
