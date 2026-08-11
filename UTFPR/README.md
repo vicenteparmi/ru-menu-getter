@@ -5,7 +5,8 @@ Sistema automatizado para processar cardápios da UTFPR a partir de PDFs no Goog
 ## Otimizações 2026
 
 - ✅ **Economia de API**: Extração de texto local (pdfplumber) antes de enviar ao Gemini (~97% de economia em PDFs de texto).
-- ✅ **Saída Estruturada**: Uso de Pydantic para garantir JSON 100% válido para o Firebase.
+- ✅ **Saída Estruturada**: JSON Schema na API e validação estrita com Pydantic antes do Firebase.
+- ✅ **Modelo**: `gemini-3.5-flash-lite` para processamento de texto e PDFs.
 - ✅ **Ano Dinâmico**: Datas tratadas dinamicamente com base no ano atual.
 - ✅ **Filtro de Ruído**: Redução do `thinking_budget` para 2100 para menor latência e custo.
 
@@ -93,4 +94,3 @@ Isso indica que o PDF é baseado em imagem (scan). O sistema detecta isso automa
 
 ### "Erro ao processar PDF inline"
 Certifique-se de que a biblioteca `google-genai` está instalada e que o modelo usado suporta o formato enviado.
-

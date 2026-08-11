@@ -16,6 +16,9 @@ from models import get_menu_json_schema, validate_menu_data
 from pdf_text_extractor import extract_text_from_pdf
 
 
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+
+
 def get_current_year() -> int:
     """Returns the current year for dynamic date handling."""
     return datetime.now().year
@@ -43,10 +46,12 @@ REGRAS IMPORTANTES:
 2. Use {current_year} como o ano para todas as datas (ano atual)
 3. Cada dia deve ter: menu (array de arrays), timestamp (sempre 0), weekday (dia da semana em português)
 4. O array 'menu' representa 3 refeições: [café da manhã/lanche, almoço, jantar]
-5. Se não houver informação para uma refeição, use EXATAMENTE ["Sem refeições disponíveis"]
-6. Capitalize adequadamente os nomes dos pratos
-7. Mantenha opções vegetarianas/veganas quando presentes
-8. Inclua acompanhamentos e saladas quando mencionados
+5. O array 'menu' deve ter EXATAMENTE 3 posições, sem omitir nem adicionar períodos
+6. Cada período deve conter pelo menos uma string não vazia
+7. Se não houver informação para uma refeição, use EXATAMENTE ["Sem refeições disponíveis"]
+8. Capitalize adequadamente os nomes dos pratos
+9. Mantenha opções vegetarianas/veganas quando presentes
+10. Inclua acompanhamentos e saladas quando mencionados
 
 FORMATO DE SAÍDA (JSON válido, sem comentários):
 {{
@@ -65,6 +70,20 @@ Retorne APENAS o JSON válido do cardápio, sem texto adicional.
 """
 
 
+def get_generate_content_config() -> types.GenerateContentConfig:
+    """Builds the shared strict JSON response configuration."""
+    return types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(
+            thinking_budget=2100,
+        ),
+        system_instruction=[
+            types.Part.from_text(text=get_system_instruction()),
+        ],
+        response_mime_type="application/json",
+        response_json_schema=get_menu_json_schema(),
+    )
+
+
 def clean_response_text(text: str) -> str:
     """Remove markdown code blocks from response."""
     text = text.strip()
@@ -80,7 +99,7 @@ def clean_response_text(text: str) -> str:
     return text.strip()
 
 
-def process_text_with_gemini(text_content: str, model_name: str = "gemini-3.1-flash-lite-preview") -> str:
+def process_text_with_gemini(text_content: str, model_name: str = DEFAULT_MODEL) -> str:
     """
     Process extracted text with Gemini (cheaper than sending full PDF).
     
@@ -107,15 +126,7 @@ def process_text_with_gemini(text_content: str, model_name: str = "gemini-3.1-fl
     ]
     
     # Configure with structured output
-    generate_content_config = types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            thinking_budget=2100,
-        ),
-        system_instruction=[
-            types.Part.from_text(text=get_system_instruction()),
-        ],
-        response_mime_type="application/json",
-    )
+    generate_content_config = get_generate_content_config()
     
     # Generate content
     response = client.models.generate_content(
@@ -164,7 +175,7 @@ def upload_pdf_to_gemini(client: genai.Client, pdf_path: str, display_name: str 
     return file
 
 
-def process_pdf_with_gemini(pdf_path: str, model_name: str = "gemini-3.1-flash-lite-preview") -> str:
+def process_pdf_with_gemini(pdf_path: str, model_name: str = DEFAULT_MODEL) -> str:
     """
     Processa um PDF usando a API do Gemini (File API para arquivos grandes).
     
@@ -195,15 +206,7 @@ def process_pdf_with_gemini(pdf_path: str, model_name: str = "gemini-3.1-flash-l
         ),
     ]
     
-    generate_content_config = types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            thinking_budget=2100,
-        ),
-        system_instruction=[
-            types.Part.from_text(text=get_system_instruction()),
-        ],
-        response_mime_type="application/json",
-    )
+    generate_content_config = get_generate_content_config()
     
     # Gerar conteúdo
     response = client.models.generate_content(
@@ -225,7 +228,7 @@ def process_pdf_with_gemini(pdf_path: str, model_name: str = "gemini-3.1-flash-l
     return text
 
 
-def process_pdf_inline(pdf_path: str, model_name: str = "gemini-3.1-flash-lite-preview") -> str:
+def process_pdf_inline(pdf_path: str, model_name: str = DEFAULT_MODEL) -> str:
     """
     Processa um PDF com estratégia otimizada:
     1. Tenta extrair texto localmente primeiro (mais barato)
@@ -270,15 +273,7 @@ def process_pdf_inline(pdf_path: str, model_name: str = "gemini-3.1-flash-lite-p
         ),
     ]
     
-    generate_content_config = types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            thinking_budget=2100,
-        ),
-        system_instruction=[
-            types.Part.from_text(text=get_system_instruction()),
-        ],
-        response_mime_type="application/json",
-    )
+    generate_content_config = get_generate_content_config()
     
     # Gerar conteúdo
     response = client.models.generate_content(
