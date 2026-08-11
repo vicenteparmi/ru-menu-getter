@@ -92,6 +92,15 @@ jobs:
       run: ruby UFABC.rb
       continue-on-error: true
 
+    - name: Validate Unicamp menu parser
+      run: ruby test_unicamp.rb
+
+    - name: Get Unicamp menus
+      env:
+        FIREBASE_KEY: ${{ secrets.SECRET }}
+        BASE_URL: ${{ secrets.BASE_URI }}
+      run: ruby UNICAMP.rb
+
     # - name: Get UFRGS menus
     #   env:
     #     FIREBASE_KEY: ${{ secrets.SECRET }} 
