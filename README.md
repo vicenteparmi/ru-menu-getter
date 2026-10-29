@@ -62,8 +62,10 @@ BASE_URL=https://seu-firebase.firebaseio.com FIREBASE_KEY=... python UFV.py --up
 python -m unittest discover -s tests -p 'test_ufv.py' -v
 ```
 
-O workflow diário executa a UFV duas vezes por dia (00:00 e 12:00 UTC),
-ou manualmente com `target=ufv`, reaproveitando `BASE_URI` e `SECRET`.
+O workflow independente [`ufv_menu.yml`](.github/workflows/ufv_menu.yml) executa
+a UFV duas vezes por dia (00:00 e 12:00 UTC), ou manualmente com
+`gh workflow run ufv_menu.yml`, reaproveitando `BASE_URI` e `SECRET`.
+Em pushes e pull requests, somente os testes locais são executados.
 A coleta começa no dia atual em America/Sao_Paulo e busca 14 dias.
 O portal responde por **HTTP**; HTTPS retorna 403. Envia-se apenas a data
 ao portal, sem credenciais. O Firebase é acessado exclusivamente por HTTPS.
