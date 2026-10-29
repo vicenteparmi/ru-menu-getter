@@ -7,6 +7,7 @@ require 'firebase'
 require 'open-uri'
 require 'nokogiri'
 require 'json'
+require 'date'
 
 # Create the array with all the info
 data = {
@@ -259,7 +260,7 @@ def scrape_menu(name, url, city)
     element = [
       date[i],
       weekday[i],
-      menut[i],
+      menut[i].map { |meal| meal.is_a?(Array) && !meal.empty? ? meal : ["Sem refeições disponíveis"] },
       Time.now.to_i
     ]
     menu[i] = element
@@ -289,10 +290,13 @@ def scrape_menu(name, url, city)
       next  # Skip this iteration if date parsing failed
     end
 
+    Date.iso8601(date_str) # Reject invalid calendar dates before writing.
     element[0] = date_str
 
     # Update the database (directly to archive path)
     response = firebase.set("archive/menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
+
+    raise "Firebase HTTP #{response.code}" unless response.success?
 
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."

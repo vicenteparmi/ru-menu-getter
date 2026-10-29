@@ -226,6 +226,8 @@ def scrape_menu(name, url, city)
     # Update the database (directly to archive path)
     response = firebase.set("archive/menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
 
+    raise "Firebase HTTP #{response.code}" unless response.success?
+
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."
   end
@@ -261,8 +263,9 @@ data.each do |city|
     sleep(10)
     begin
       scrape_menu(ru_name, url, city_name)
-    rescue NoMethodError => e
-      puts "Error on the scrape function: #{e.message}. Skipping..."
+    rescue StandardError => e
+      warn "UFABC collection failed: #{e.class}: #{e.message}"
+      raise
     end  
   end
 end
