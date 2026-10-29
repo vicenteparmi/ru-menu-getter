@@ -17,13 +17,14 @@ on:
         options:
           - all
           - daily
+          - ufpr
           - utfpr
 
 jobs:
   update-database:
     if: >-
       (github.event_name == 'schedule' && github.event.schedule == '0 12,0 * * *') ||
-      (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'daily'))
+      (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'daily' || inputs.target == 'ufpr'))
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -41,27 +42,11 @@ jobs:
       with:
         ruby-version: 3.4.1
 
-    - name: Cache Ruby gems
-      uses: actions/cache@v3
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-ruby-${{ hashFiles('Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-ruby-
+    - name: Install UFPR dependencies
+      run: gem install nokogiri firebase --no-document
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libxml2 libxslt1-dev --fix-missing
-
-    - name: Install dependencies
-      run: MAKEFLAGS="-j$(nproc)" gem install nokogiri open-uri firebase google-cloud-firestore
-
-    - id: 'auth'
-      name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
+    - name: Validate UFPR certificate trust
+      run: ruby UFPR/test_source_http.rb
 
     - name: Get UFPR menus
       id: ufpr

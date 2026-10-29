@@ -23,6 +23,7 @@ jobs:
         with:
           ruby-version: '3.4.1'
       - run: ruby UFRGS/test_menu_dates.rb
+      - run: ruby UFPR/test_source_http.rb
       - run: |
           ruby -c UFRGS/UFRGS.rb
           ruby -c UFPR.rb
