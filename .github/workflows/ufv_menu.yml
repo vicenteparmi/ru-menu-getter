@@ -1,36 +1,16 @@
-name: UFV menu update
-
+name: Unicamp diagnostic (read only)
 on:
-  schedule:
-    - cron: '0 12,0 * * *'
   workflow_dispatch:
-  push:
-    branches: [feat/ufv-menus]
-    paths: ['UFV.py', 'tests/**', '.github/workflows/ufv_menu.yml']
-  pull_request:
-    paths: ['UFV.py', 'tests/**', '.github/workflows/ufv_menu.yml']
-
 jobs:
-  update-ufv:
+  check:
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
     permissions:
       contents: read
-    concurrency:
-      group: ufv-menu-scraper
-      cancel-in-progress: false
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
-          python-version: '3.11'
-      - name: Validate UFV parser and Firebase writes
-        run: python -m unittest discover -s tests -p 'test_ufv.py' -v
-      - name: Collect, upload and verify UFV menus (no AI)
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        env:
-          FIREBASE_KEY: ${{ secrets.SECRET }}
-          BASE_URL: ${{ secrets.BASE_URI }}
-        run: python UFV.py --upload
+          ruby-version: '3.4.1'
+      - run: gem install nokogiri --no-document
+      - run: ruby test_unicamp.rb
+      - run: ruby UNICAMP.rb --dry-run
