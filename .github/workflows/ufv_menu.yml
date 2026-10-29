@@ -14,3 +14,7 @@ jobs:
       - run: gem install nokogiri --no-document
       - run: ruby test_unicamp.rb
       - run: ruby UNICAMP.rb --dry-run
+      - name: Check Limeira and Piracicaba independently
+        if: always()
+        run: |
+          ruby -r ./UNICAMP -e 'result = Hash.new { |h, k| h[k] = Hash.new { |r, ru| r[ru] = {} } }; UnicampMenus::Runner.new.send(:collect_regional, result); puts JSON.pretty_generate(result.transform_values { |rus| rus.transform_values { |days| days.keys.sort } })'
