@@ -12,13 +12,15 @@ class UfprMenuParserTest < Minitest::Test
     HTML
   end
 
-  def test_real_central_menu_preserves_meals_vegan_and_allergens
+  def test_real_central_menu_preserves_meals_and_vegan_options_without_icon_labels
     result = UfprMenuParser.parse(File.read(File.join(__dir__, 'fixtures/central-2026-10-29.html')))
     assert_equal ['2026-10-29'], result.keys
     value = result['2026-10-29']
     assert_equal 'Quinta-Feira', value['weekday']
     assert_equal 3, value['menu'].size
-    assert value['menu'][0].any? { |item| item.include?('Pão de milho') && item.include?('Contém glúten') }
+    assert_includes value['menu'][0], 'Pão de milho ou integral com queijo'
+    assert_includes value['menu'][0], 'Opção vegana: pão vegano ou integral com pasta de amendoim'
+    refute_match(/Contém|Contêm|Indicado para veganos/, value['menu'].flatten.join(' '))
     assert value['menu'][1].any? { |item| item.include?('Lombo ao molho ferrugem') }
     assert value['menu'][1].any? { |item| item.include?('Opção vegana: tomate recheado') }
     assert value['menu'][2].any? { |item| item.include?('Tirinhas de carne') }

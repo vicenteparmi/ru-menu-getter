@@ -58,10 +58,7 @@ module UfprMenuParser
       cells.each do |cell|
         copy = cell.dup
         copy.css('br').each { |br| br.replace("\n") }
-        copy.css('img').each do |image|
-          title = clean(image['title'])
-          image.replace(title.empty? ? '' : " (#{title})")
-        end
+        copy.css('img').remove
         items = copy.text.split(/\r?\n/).map { |line| clean(line) }.reject(&:empty?)
         next if items.empty?
         raise Error, 'Itens sem cabeçalho de refeição' if current.nil?
