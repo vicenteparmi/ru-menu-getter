@@ -24,14 +24,12 @@ jobs:
           ruby-version: '3.4.1'
       - run: ruby UFRGS/test_menu_dates.rb
       - run: ruby UFPR/test_source_http.rb
+      - run: gem install nokogiri --no-document
+      - run: ruby UFPR/test_menu_parser.rb
       - run: |
           ruby -c UFRGS/UFRGS.rb
           ruby -c UFPR.rb
           ruby -c UFABC.rb
-      - name: Install Nokogiri for UFPR validation
-        if: github.event_name == 'workflow_dispatch'
-        timeout-minutes: 2
-        run: gem install nokogiri --no-document
       - name: Verify UFPR source with complete TLS chain
         if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 2

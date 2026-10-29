@@ -20,6 +20,12 @@ on:
           - ufpr
           - utfpr
 
+      ufpr_dry_run:
+        description: Validate UFPR without database writes
+        required: false
+        default: false
+        type: boolean
+
 jobs:
   update-database:
     if: >-
@@ -48,13 +54,25 @@ jobs:
     - name: Validate UFPR certificate trust
       run: ruby UFPR/test_source_http.rb
 
+    - name: Validate UFPR parser
+      run: ruby UFPR/test_menu_parser.rb
+
     - name: Get UFPR menus
       id: ufpr
       env:
         FIREBASE_KEY: ${{ secrets.SECRET }} 
         BASE_URL: ${{ secrets.BASE_URI }}
-      run: ruby UFPR.rb
+      run: ruby UFPR.rb --output ufpr-menus.json ${{ inputs.ufpr_dry_run && '--dry-run' || '' }}
       timeout-minutes: 10
+
+    - name: Save collected UFPR menus
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ufpr-menus
+        path: ufpr-menus.json
+        if-no-files-found: ignore
+        retention-days: 7
 
     - name: Notify UFPR scraping failures via GitHub Issue
       if: always() && steps.ufpr.outputs.has_failures == 'true' || hashFiles('ufpr_failures.md') != ''
