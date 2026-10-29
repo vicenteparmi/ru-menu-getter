@@ -28,20 +28,12 @@ jobs:
           ruby -c UFRGS/UFRGS.rb
           ruby -c UFPR.rb
           ruby -c UFABC.rb
-      - name: Diagnose official source access (read only)
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
-        run: |
-          ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI(url).open(open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal
-      - name: Install Nokogiri for UFPR source validation
+      - name: Install Nokogiri for UFPR validation
         if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 2
         run: gem install nokogiri --no-document
-      - name: Verify UFPR access and capture public menu markup
-        timeout-minutes: 2
+      - name: Verify UFPR source with complete TLS chain
         if: github.event_name == 'workflow_dispatch'
+        timeout-minutes: 2
         run: |
-          cat /etc/ssl/certs/ca-certificates.crt UFPR/certs/rnp-icpedu-gr46-2025.pem > /tmp/ufpr-ca.pem
-          curl --fail --location --max-time 25 --cacert /tmp/ufpr-ca.pem --user-agent 'Mozilla/5.0' https://p4e.ufpr.br/ru/cardapio-ru-central/ -o /tmp/ufpr-page.html
-          python -c 'import base64; print("UFPR_PUBLIC_HTML=" + base64.b64encode(open("/tmp/ufpr-page.html", "rb").read()).decode())'
+          ruby -r ./UFPR/source_http -rnokogiri -rbase64 -e '$stdout.sync = true; puts "Starting verified UFPR request"; html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-central/"); puts "Received #{html.bytesize} bytes"; doc = Nokogiri::HTML(html); puts "Tables: #{doc.css("figure.wp-block-table").size}"; body = doc.css("p,figure.wp-block-table").select { |n| n.name == "figure" || n.css("strong").any? }.map(&:to_html).join("\n"); Base64.strict_encode64(body).scan(/.{1,120}/).each { |line| puts "UFPR_CHUNK=#{line}" }'
