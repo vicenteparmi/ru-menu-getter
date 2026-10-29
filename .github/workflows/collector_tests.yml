@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main, fix/remaining-menu-collectors]
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
   pull_request:
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
 permissions:
   contents: read
 jobs:
@@ -23,13 +23,15 @@ jobs:
         with:
           ruby-version: '3.4.1'
       - run: ruby UFRGS/test_menu_dates.rb
+      - run: ruby UFPR/test_source_http.rb
+      - run: gem install nokogiri --no-document
+      - run: ruby UFPR/test_menu_parser.rb
       - run: |
           ruby -c UFRGS/UFRGS.rb
           ruby -c UFPR.rb
           ruby -c UFABC.rb
-      - name: Diagnose official source access (read only)
+      - name: Verify UFPR source with complete TLS chain
         if: github.event_name == 'workflow_dispatch'
-        env:
-          SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
+        timeout-minutes: 2
         run: |
-          ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI(url).open(open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal
+          ruby -r ./UFPR/source_http -e 'html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-central/"); puts "UFPR TLS verified: #{html.bytesize} bytes received"'
