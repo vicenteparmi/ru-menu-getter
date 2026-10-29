@@ -32,4 +32,4 @@ jobs:
         env:
           SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
         run: |
-          ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI.open(url, open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal
+          ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI(url).open(open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal
