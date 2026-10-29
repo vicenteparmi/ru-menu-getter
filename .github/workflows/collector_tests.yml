@@ -42,4 +42,6 @@ jobs:
         timeout-minutes: 2
         if: github.event_name == 'workflow_dispatch'
         run: |
-          ruby -r ./UFPR/source_http -rnokogiri -rbase64 -e 'html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-central/"); doc = Nokogiri::HTML(html); puts "UFPR_PUBLIC_HTML=" + Base64.strict_encode64(doc.css("p,figure.wp-block-table").map(&:to_html).join("\n")); puts "UFPR TLS verified; #{html.bytesize} bytes; #{doc.css("figure.wp-block-table").size} tables"'
+          cat /etc/ssl/certs/ca-certificates.crt UFPR/certs/rnp-icpedu-gr46-2025.pem > /tmp/ufpr-ca.pem
+          curl --fail --location --max-time 25 --cacert /tmp/ufpr-ca.pem --user-agent 'Mozilla/5.0' https://p4e.ufpr.br/ru/cardapio-ru-central/ -o /tmp/ufpr-page.html
+          python -c 'import base64; print("UFPR_PUBLIC_HTML=" + base64.b64encode(open("/tmp/ufpr-page.html", "rb").read()).decode())'
