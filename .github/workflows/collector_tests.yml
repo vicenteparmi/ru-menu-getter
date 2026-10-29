@@ -34,8 +34,12 @@ jobs:
           SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
         run: |
           ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI(url).open(open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal
+      - name: Install Nokogiri for UFPR source validation
+        if: github.event_name == 'workflow_dispatch'
+        timeout-minutes: 2
+        run: gem install nokogiri --no-document
       - name: Verify UFPR access and capture public menu markup
+        timeout-minutes: 2
         if: github.event_name == 'workflow_dispatch'
         run: |
-          gem install nokogiri --no-document
           ruby -r ./UFPR/source_http -rnokogiri -rbase64 -e 'html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-central/"); doc = Nokogiri::HTML(html); puts "UFPR_PUBLIC_HTML=" + Base64.strict_encode64(doc.css("p,figure.wp-block-table").map(&:to_html).join("\n")); puts "UFPR TLS verified; #{html.bytesize} bytes; #{doc.css("figure.wp-block-table").size} tables"'

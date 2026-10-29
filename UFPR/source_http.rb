@@ -36,7 +36,7 @@ module UfprSource
         http.read_timeout = 20
         request = Net::HTTP::Get.new(uri)
         request['User-Agent'] = 'CampusDine UFPR menu collector/1.0'
-        response = http.request(request)
+        response = Timeout.timeout(35) { http.request(request) }
         raise Error, "UFPR HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
 
         return response.body.force_encoding('UTF-8')

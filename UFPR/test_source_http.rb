@@ -1,4 +1,5 @@
 require 'minitest/autorun'
+require 'minitest/mock'
 require_relative 'source_http'
 
 class UfprSourceHttpTest < Minitest::Test
