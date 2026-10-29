@@ -512,7 +512,7 @@ module UnicampMenus
     def run(argv)
       options = { dry_run: false, setup: false, campus: 'all' }
       OptionParser.new do |parser|
-        parser.banner = 'Uso: ruby UNICAMP.rb [--dry-run] [--setup]'
+        parser.banner = 'Uso: ruby UNICAMP.rb [--dry-run] [--setup] [--campus all|campinas|regional] [--output FILE]'
         parser.on('--dry-run', 'Coleta e valida sem escrever no Firebase') { options[:dry_run] = true }
         parser.on('--setup', 'Cria/atualiza metadados-base antes do upload') { options[:setup] = true }
         parser.on('--campus CAMPUS', %w[all campinas regional], 'all, campinas ou regional') { |value| options[:campus] = value }

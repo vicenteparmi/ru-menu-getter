@@ -31,6 +31,33 @@ Os scripts para a UFRGS estão disponíveis em um container Docker separado:
 - **Configuração**: [`UFRGS/docker-compose.yml`](UFRGS/docker-compose.yml)
 - **Script**: [`UFRGS/UFRGS.rb`](UFRGS/UFRGS.rb)
 
+### Unicamp (Campinas, Limeira e Piracicaba)
+
+[`UNICAMP.rb`](UNICAMP.rb) lê as páginas oficiais sem IA. O workflow independente
+[`unicamp_menu.yml`](.github/workflows/unicamp_menu.yml) executa domingo às 12h,
+segunda às 9h e 11h, terça e quinta às 9h (America/Sao_Paulo), ou manualmente
+com `gh workflow run unicamp_menu.yml`. Reaproveita `BASE_URI` e `SECRET`;
+o workflow legado pode permanecer desativado.
+
+```sh
+ruby test_unicamp.rb
+ruby UNICAMP.rb --dry-run --campus campinas --output campinas.json
+ruby UNICAMP.rb --dry-run --campus regional --output regional.json
+# Com BASE_URL e FIREBASE_KEY configuradas: grava e relê cada cardápio.
+ruby UNICAMP.rb --campus campinas
+```
+
+Campinas e os campi regionais rodam em jobs independentes. Falhas de uma data
+são registradas sem impedir outras datas válidas; após gravar os dados válidos,
+a execução retorna erro se houve qualquer falha parcial, mantendo o alerta
+visível no Actions. Não se substituem cardápios de datas com falha de coleta.
+
+Em Campinas, se uma indicação de restaurantes faltar em um dos cartões
+padrão/vegano, usa-se a indicação explícita do cartão par para a mesma refeição
+e data. Indicações divergentes, desconhecidas ou ausentes nos dois cartões
+continuam sendo rejeitadas. Os testes incluem o HTML real de 28/10/2026 que
+provocava a interrupção. Nenhuma alteração no CampusDine é necessária.
+
 ### Análise de Dados
 
 Este fluxo de trabalho pode ser acionado manualmente para realizar análise de dados nos cardápios arquivados.
