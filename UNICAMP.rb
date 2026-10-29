@@ -216,13 +216,13 @@ module UnicampMenus
 
       all_text = TextHelpers.clean(description.text)
       service_sentence = all_text[/As refeições serão servidas[^.]*\./i]
-      raise Error, "Indicação de restaurantes ausente para #{name}" unless service_sentence
-
-      restaurants = RESTAURANT_CODES.select { |code| service_sentence.match?(/\b#{code}\b/i) }
-      raise Error, "Indicação de restaurantes ambígua: #{service_sentence}" if restaurants.empty?
+      restaurants = service_sentence && RESTAURANT_CODES.select { |code| service_sentence.match?(/\b#{code}\b/i) }.sort
+      if service_sentence && restaurants.empty?
+        raise Error, "Indicação de restaurantes ambígua: #{service_sentence}"
+      end
 
       menu_lines = TextHelpers.lines(description).take_while { |line| !line.match?(/\AObservações?:/i) }
-      { items: ["Prato principal: #{name}", *menu_lines], restaurants: restaurants.sort }
+      { items: ["Prato principal: #{name}", *menu_lines], restaurants: restaurants }
     end
 
     def build_meal(cards, name)
@@ -230,11 +230,16 @@ module UnicampMenus
       vegan = cards["#{name} vegano"]
       return nil if standard.nil? && vegan.nil?
       raise Error, "Par padrão/vegano incompleto para #{name}" if standard.nil? || vegan.nil?
-      unless standard[:restaurants] == vegan[:restaurants]
+      # Some source cards omit the service sentence. Use only the explicit
+      # indication in the paired card for the same meal and date, never lunch
+      # to infer dinner or a fixed list of restaurants.
+      restaurants = standard[:restaurants] || vegan[:restaurants]
+      raise Error, "Indicação de restaurantes ausente para #{name}" unless restaurants
+      if standard[:restaurants] && vegan[:restaurants] && standard[:restaurants] != vegan[:restaurants]
         raise Error, "Restaurantes divergentes entre os cardápios de #{name}"
       end
 
-      { items: MealBuilder.combine(standard[:items], vegan[:items]), restaurants: standard[:restaurants] }
+      { items: MealBuilder.combine(standard[:items], vegan[:items]), restaurants: restaurants }
     end
 
     def build_restaurant_days(date, meals, breakfast)
@@ -429,27 +434,43 @@ module UnicampMenus
   end
 
   class Runner
+    attr_reader :errors
+
     def initialize(http: HttpClient.new)
       @http = http
+      @errors = []
     end
 
-    def collect
+    def collect(campus: 'all')
+      @errors.clear
       result = Hash.new { |cities, city| cities[city] = Hash.new { |restaurants, ru| restaurants[ru] = {} } }
-      collect_campinas(result)
-      collect_regional(result)
+      safely('Campinas') { collect_campinas(result) } if %w[all campinas].include?(campus)
+      safely('Limeira/Piracicaba') { collect_regional(result) } if %w[all regional].include?(campus)
+      raise Error, "Nenhum cardápio válido coletado. #{@errors.join('; ')}" if result.empty?
+
       result
     end
 
     private
+
+    def safely(context)
+      yield
+    rescue Error, Date::Error, URI::InvalidURIError, JSON::ParserError, *TRANSIENT_NETWORK_ERRORS => e
+      message = "#{context}: #{e.class}: #{e.message}"
+      @errors << message
+      warn "[UNICAMP PARTIAL FAILURE] #{message}"
+    end
 
     def collect_campinas(result)
       parser = CampinasParser.new
       breakfast = parser.parse_breakfast(@http.get(CAMPINAS_CARDAPIO_URL))
       index = @http.get(CAMPINAS_MENU_URL, encoding: 'ISO-8859-1')
       parser.discover_dates(index).each do |date|
-        html = @http.get(CAMPINAS_MENU_URL, params: { d: date.iso8601 }, encoding: 'ISO-8859-1')
-        parser.parse_day(html, expected_date: date, breakfast: breakfast).each do |restaurant, payload|
-          result['cam'][restaurant][date.iso8601] = payload
+        safely("Campinas/#{date}") do
+          html = @http.get(CAMPINAS_MENU_URL, params: { d: date.iso8601 }, encoding: 'ISO-8859-1')
+          parser.parse_day(html, expected_date: date, breakfast: breakfast).each do |restaurant, payload|
+            result['cam'][restaurant][date.iso8601] = payload
+          end
         end
       end
     end
@@ -458,10 +479,12 @@ module UnicampMenus
       parser = RegionalParser.new
       index = @http.get(REGIONAL_MENU_URL)
       parser.discover_dates(index).each do |date|
-        html = @http.post(REGIONAL_MENU_URL, form: { data: date.iso8601 })
-        parser.parse_day(html, expected_date: date).each do |restaurant, payload|
-          city = restaurant == 'rfop' ? 'pir' : 'lim'
-          result[city][restaurant][date.iso8601] = payload
+        safely("Limeira/Piracicaba/#{date}") do
+          html = @http.post(REGIONAL_MENU_URL, form: { data: date.iso8601 })
+          parser.parse_day(html, expected_date: date).each do |restaurant, payload|
+            city = restaurant == 'rfop' ? 'pir' : 'lim'
+            result[city][restaurant][date.iso8601] = payload
+          end
         end
       end
     end
@@ -487,26 +510,30 @@ module UnicampMenus
     module_function
 
     def run(argv)
-      options = { dry_run: false, setup: false }
+      options = { dry_run: false, setup: false, campus: 'all' }
       OptionParser.new do |parser|
-        parser.banner = 'Uso: ruby UNICAMP.rb [--dry-run] [--setup]'
+        parser.banner = 'Uso: ruby UNICAMP.rb [--dry-run] [--setup] [--campus all|campinas|regional] [--output FILE]'
         parser.on('--dry-run', 'Coleta e valida sem escrever no Firebase') { options[:dry_run] = true }
         parser.on('--setup', 'Cria/atualiza metadados-base antes do upload') { options[:setup] = true }
+        parser.on('--campus CAMPUS', %w[all campinas regional], 'all, campinas ou regional') { |value| options[:campus] = value }
+        parser.on('--output FILE', 'Salva os cardápios coletados em JSON') { |value| options[:output] = value }
       end.parse!(argv)
 
       Env.load
-      menus = Runner.new.collect
+      runner = Runner.new
+      menus = runner.collect(campus: options[:campus])
+      File.write(options[:output], JSON.pretty_generate(menus)) if options[:output]
       summary = menus.transform_values do |restaurants|
         restaurants.transform_values { |dates| dates.keys.sort }
       end
       puts JSON.pretty_generate(summary)
-      return 0 if options[:dry_run]
+      return runner.errors.empty? ? 0 : 1 if options[:dry_run]
 
       store = FirebaseStore.new(base_url: ENV['BASE_URL'], auth: ENV['FIREBASE_KEY'])
       store.setup_restaurants if options[:setup]
       store.upload(menus)
-      puts '[UNICAMP] Coleta, upload e verificação concluídos.'
-      0
+      puts '[UNICAMP] Cardápios válidos gravados e verificados.'
+      runner.errors.empty? ? 0 : 1
     rescue OptionParser::ParseError, Error, Date::Error, URI::InvalidURIError, JSON::ParserError,
            *TRANSIENT_NETWORK_ERRORS => e
       warn "[UNICAMP ERROR] #{e.class}: #{e.message}"

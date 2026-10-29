@@ -1,0 +1,61 @@
+name: Unicamp menu update
+
+on:
+  schedule:
+    # America/Sao_Paulo: Sun 12:00, Mon 09:00/11:00, Tue/Thu 09:00.
+    - cron: '0 15 * * 0'
+    - cron: '0 12,14 * * 1'
+    - cron: '0 12 * * 2,4'
+  workflow_dispatch:
+  push:
+    branches: [main, fix/unicamp-collection]
+    paths: ['UNICAMP.rb', 'test_unicamp.rb', 'tests/fixtures/unicamp-*', '.github/workflows/unicamp_menu.yml']
+  pull_request:
+    paths: ['UNICAMP.rb', 'test_unicamp.rb', 'tests/fixtures/unicamp-*', '.github/workflows/unicamp_menu.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.1'
+      - run: gem install nokogiri --no-document
+      - run: ruby test_unicamp.rb
+
+  update:
+    needs: validate
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        campus: [campinas, regional]
+    concurrency:
+      group: unicamp-menu-${{ matrix.campus }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.1'
+      - run: gem install nokogiri --no-document
+      - name: Collect, upload and read back menus
+        env:
+          FIREBASE_KEY: ${{ secrets.SECRET }}
+          BASE_URL: ${{ secrets.BASE_URI }}
+        run: ruby UNICAMP.rb --campus ${{ matrix.campus }} --output unicamp-menus.json
+      - name: Save collected menus for verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unicamp-${{ matrix.campus }}
+          path: unicamp-menus.json
+          if-no-files-found: ignore
+          retention-days: 7

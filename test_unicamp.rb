@@ -97,6 +97,84 @@ class UnicampMenusTest < Minitest::Test
     end
   end
 
+  def test_campinas_real_page_with_missing_standard_dinner_service_sentence
+    html = File.read(File.join(__dir__, 'tests/fixtures/unicamp-campinas-2026-10-28.html'), encoding: 'ISO-8859-1').encode('UTF-8')
+    result = UnicampMenus::CampinasParser.new.parse_day(html, expected_date: Date.new(2026, 10, 28), breakfast: ['Café'])
+    assert_equal %w[ra rs ru], result.keys.sort
+    result.each_value do |payload|
+      assert_includes payload['menu'][2], 'Prato principal: FILEZINHO DE FRANGO AO MOLHO DE ERVAS'
+      assert payload['menu'][2].any? { |item| item.start_with?('Opção vegana:') }
+    end
+  end
+
+  def test_campinas_can_use_standard_card_service_when_vegan_card_omits_it
+    date = Date.new(2026, 10, 29)
+    html = campinas_html(date: date, lunch_restaurants: ['RS'])
+    doc = Nokogiri::HTML(html)
+    doc.css('.menu-section')[3].at_css('.menu-item-description').content = 'Arroz integral e feijão'
+    result = UnicampMenus::CampinasParser.new.parse_day(doc.to_html, expected_date: date, breakfast: ['Café'])
+    assert_equal ['rs'], result.keys
+    refute_equal [UnicampMenus::NO_MEALS], result['rs']['menu'][2]
+  end
+
+  def test_campinas_does_not_infer_dinner_restaurants_from_lunch
+    date = Date.new(2026, 10, 29)
+    doc = Nokogiri::HTML(campinas_html(date: date, lunch_restaurants: ['RS']))
+    doc.css('.menu-section').drop(2).each do |card|
+      card.at_css('.menu-item-description').content = 'Arroz e feijão'
+    end
+    assert_raises(UnicampMenus::Error) do
+      UnicampMenus::CampinasParser.new.parse_day(doc.to_html, expected_date: date, breakfast: ['Café'])
+    end
+  end
+
+  def test_campinas_rejects_unknown_explicit_restaurants_even_when_pair_is_valid
+    date = Date.new(2026, 10, 29)
+    html = campinas_html(date: date, lunch_restaurants: ['RS']).sub('somente no RS.', 'somente no XYZ.')
+    assert_raises(UnicampMenus::Error) do
+      UnicampMenus::CampinasParser.new.parse_day(html, expected_date: date, breakfast: ['Café'])
+    end
+  end
+
+  def test_runner_keeps_regional_menus_when_campinas_fails
+    runner_class = Class.new(UnicampMenus::Runner) do
+      def collect_campinas(_result) = raise UnicampMenus::Error, 'source failed'
+      def collect_regional(result)
+        result['lim']['rli']['2026-10-29'] = { 'menu' => [['Café'], ['Almoço'], ['Jantar']] }
+      end
+    end
+    runner = runner_class.new
+    result = runner.collect
+    assert_equal ['lim'], result.keys
+    assert_equal 1, runner.errors.length
+    assert_match 'Campinas', runner.errors.first
+    assert_equal result, runner.collect(campus: 'regional')
+    assert_empty runner.errors
+  end
+
+  def test_runner_keeps_valid_campinas_dates_after_a_bad_day
+    date = Date.new(2026, 10, 29)
+    index = '<a href="?d=2026-10-28">Yesterday</a><a href="?d=2026-10-29">Today</a>'
+    day_html = campinas_html(date: date, lunch_restaurants: ['RS'])
+    http = Object.new
+    http.define_singleton_method(:get) do |url, params: {}, **_kwargs|
+      if url == UnicampMenus::CAMPINAS_CARDAPIO_URL
+        UnicampMenusTest::CAMPINAS_BREAKFAST
+      elsif params.empty?
+        index
+      elsif params[:d] == '2026-10-28'
+        '<html>bad day</html>'
+      else
+        day_html
+      end
+    end
+    runner = UnicampMenus::Runner.new(http: http)
+    result = runner.collect(campus: 'campinas')
+    assert_equal ['2026-10-29'], result['cam']['rs'].keys
+    assert_equal 1, runner.errors.length
+    assert_match '2026-10-28', runner.errors.first
+  end
+
   def test_regional_weekday_distributes_to_all_three_restaurants
     parser = UnicampMenus::RegionalParser.new
     date = Date.new(2026, 8, 11)

@@ -1,0 +1,390 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="Content-Language" content="pt-br" />
+<meta name="description" content="Prefeitura da Unicamp" />
+<meta name="keywords"
+	content="Prefeitura, Fretado, Unitransp, RU, Cardapio, Unicamp, Campinas, Universidade Estadual de Campinas" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefeitura da Unicamp - Cardápio</title>
+
+<!-- Bootstrap -->
+<link rel="stylesheet" type="text/css"  href="css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="fonts/font-awesome/css/font-awesome.css">
+
+<!-- Stylesheet
+    ================================================== -->
+<link rel="stylesheet" type="text/css"  href="css/style.css">
+<link href='https://fonts.googleapis.com/css?family=PT+Sans+Narrow' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Raleway:300,400,500,600,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script:400,700" rel="stylesheet">
+
+
+<!-- scripts -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.2/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-timezone@0.5.17/builds/moment-timezone-with-data.min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js'></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+<script src='js/cardapio_chart.js'></script>
+
+
+<script language="javascript">
+      var intervalId = null;
+      var intervalTime = 45000;
+      var updateImage = true;
+      var camIds = ['ra','rs','ru_a','ru_b'];
+      
+      function carregarDados(item, index, arr){
+      		 
+      		  var camId = arr[index]['cam_id'];
+      		  	  camId = camId.replace("cam_", "");
+
+      		  var numeroPessoas = arr[index]['number_of_people'];
+      		  var dataArquivo = moment(arr[index]['FileModifyDate'], "YYYY:MM:DD HH:mm:ss");	
+			  	  dataArquivo = (dataArquivo.format("DD/MM/YYYY HH:mm:ss"));      			
+
+           	  $("#cam_data_" + camId).html("Atualizado em: " + dataArquivo);         	  
+              $("#cam_data2_" + camId).html("Processado em: " + dataArquivo);
+              $("#cam_data2_" + camId).append(" - Pessoas detectadas: " + numeroPessoas);
+              $("#cam_data2_" + camId).append("<p style='font-size:8px'>As imagens são disponibilizadas anonimizadas, para a proteção da privacidade do titular , conforme a Lei Geral de Proteção de Dados - LGPD (Lei 13.709/2018).</p>");
+              $("#meter_" + camId).attr('value', numeroPessoas) ;
+      }
+      
+      function updateCamData(){
+          var d = new Date();
+
+          var url = "https://webservices.prefeitura.unicamp.br/cameras/cam_full.json?"+d.getTime();
+
+          $.get( url, function( data ) {
+          	  
+           	  cameras = data['cameras'];
+           	  cameras.forEach(carregarDados);
+
+       	  }, "json" );
+      }
+
+      function seeProcessedImg(camId){
+
+   	      $("#img_camera"+camId).hide();
+   	      
+          var d = new Date();
+          var url = "https://webservices.prefeitura.unicamp.br/cameras/cam_" + camId +"2.json?"+d.getTime();
+          
+          $.get( url, function( data ) {
+              $("#img_camera_"+camId).attr('src', 'data:image/jpg;base64,' + data.image_jpg_b64).fadeIn(1000);
+              $("#img_camera_"+camId).attr('width', '100%');
+              $("#img_camera_"+camId).attr('height', '100%');
+       	  }, "json" );
+       	  
+      }
+          
+      function clearImg(camId){
+    	  updateImage = true;
+    	  //jQuery('#img_camera_'+camId).removeAttr('src');
+      }
+      
+      function closeDialogImg(camId){
+     	  clearImg(camId);
+    	  clearInterval(intervalId);    
+      }
+      
+      updateCamData();
+      setInterval(updateCamData,intervalTime);
+      
+      camIds.forEach(carregando_cams_1)
+	
+	  function carregando_cams_1(item, index, arr){
+	  
+	  	var camId = arr[index];
+            
+        $(document).ready(function () {
+    	    $("#img_camera_" + camId).hover(function() {
+    	    	$(this).css("cursor", "pointer");
+    	    	});
+        	          
+             $("#img_camera_" + camId).click(function () {
+            	 clearImg(camId);
+            	 clearInterval(intervalId);
+                 $( "#dialog_" + camId ).dialog( "close" );
+              });
+              
+         });
+      }
+  
+  </script>
+
+</head>
+<body id="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+
+<!-- Navigation
+    ==========================================-->
+<nav id="menu" class="navbar navbar-default navbar-fixed-top">
+  <div class="container"> 
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header page-scroll">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"> 
+        <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> 
+      </button>
+      <a class="navbar-brand page-scroll" style="margin-left:0px;" >
+         Cardápio 28/10 
+      </a>
+    </div>
+    
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a href="?d=2026-10-28" class="page-scroll">Quarta</a></li><li ><a href="?d=2026-10-29" class="page-scroll">Quinta</a></li><li ><a href="?d=2026-10-30" class="page-scroll">Sexta</a></li><li ><a href="?d=2026-10-31" class="page-scroll">Sábado</a></li><li ><a href="?d=2026-11-01" class="page-scroll">Domingo</a></li>      </ul>
+    </div>
+    <!-- /.navbar-collapse --> 
+  </div>
+</nav>
+
+
+<!-- Restaurant Menu Section -->
+
+<div id="restaurant-menu">
+      <div class="section-title text-center center">
+        <div class="overlay">
+          <hr>
+        </div>
+      </div>
+
+<div id="row">
+  <div>
+    <div class="col-md-9">
+        <div class="row">
+          <div class="col-xs-12 col-sm-6">
+            <div class="menu-section">
+              <h2 class="menu-section-title">Almoço</h2>
+              <hr>
+              <div class="menu-item">
+                  
+                  <div class="menu-item-name">BIFE AO MOLHO ESCURO </div>
+                  <div class="menu-item-description">
+                    ARROZ E FEIJÃO<br> 
+                                        QUIBEBE<br>                    SALADA DE ALMEIRÃO<br>                    LARANJA<br>                    REFRESCO DE PÊSSEGO<br>                    <br>Observações: <br>
+                    CONTÉM GLÚTEN NO PÃO.<br />
+PODE CONTER OVOS NO BIFE AO MOLHO ESCURO.<br />
+NÃO CONTÉM LACTOSE.<br />
+<FONT COLOR ="RED"><br />
+TODOS OS DIAS SÃO SEM COPO.<br />
+As refeições serão servidas no RA, RU e RS.<br>                    </font>
+                  </div>
+                            </div>
+            </div>
+          </div>
+
+
+          <div class="col-xs-12 col-sm-6">
+            <div class="menu-section">
+              <h2 class="menu-section-title">Almoço Vegano</h2>
+              <hr>
+              <div class="menu-item">
+                  
+                  <div class="menu-item-name">LASANHA DE BERINJELA (PTS, EXTRATO DE TOMATE, MUÇARELA VEGANA E ORÉGANO) </div>
+                  <div class="menu-item-description">
+                    ARROZ INTEGRAL E FEIJÃO<br> 
+                                        QUIBEBE<br>                    SALADA DE ALMEIRÃO<br>                    LARANJA<br>                    REFRESCO DE PÊSSEGO<br>                    <br>Observações: <br>
+                    CONTÉM GLÚTEN NO PÃO E NA LASANHA DE BERINJELA.<br />
+PODE CONTER LEITE NA LASANHA DE BERINJELA.<br />
+NÃO CONTÉM OVOS.<br />
+<FONT COLOR ="RED"><br />
+TODOS OS DIAS SÃO SEM COPO.<br />
+As refeições serão servidas no RA, RU e RS.<br>                    </font>
+                  </div>
+                            </div>
+            </div>
+          </div>
+        </div>        
+        <div class="row">
+          <div class="col-xs-12 col-sm-6">
+            <div class="menu-section">
+              <h2 class="menu-section-title">Jantar</h2>
+              <hr>
+              <div class="menu-item">
+                    
+                  <div class="menu-item-name">FILEZINHO DE FRANGO AO MOLHO DE ERVAS </div>
+                  <div class="menu-item-description">
+                    ARROZ E FEIJÃO<br> 
+                                        CREME DE MILHO<br>                    SALADA DE ACELGA<br>                    MAÇÃ (RU e RA) BANANA (RS)<br>                    REFRESCO DE PÊSSEGO<br>                    <br>Observações: <br>
+                    CONTÉM GLÚTEN NO PÃO E CREME DE MILHO.<br />
+CONTÉM LACTOSE NO CREME DE MILHO.<br />
+PODE CONTER LEITE NO FILEZINHO DE FRANGO AO MOLHO DE ERVAS.<br />
+PODE CONTER DERIVADOS DE OVOS NO FILEZINHO DE FRANGO (RS)<br />
+<FONT COLOR ="RED"><br>                    </font>
+                  </div>
+                              </div>
+            </div>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <div class="menu-section">
+                <h2 class="menu-section-title">Jantar Vegano</h2>
+                <hr>
+                <div class="menu-item">
+                      
+                    <div class="menu-item-name">TORTA DE GRÃO DE BICO COM CENOURA E TOMATE (RS e RA)|TORTA DE PTS COM AVEIA E MANDIOQUINHA (RU) </div>
+                    <div class="menu-item-description">
+                      ARROZ INTEGRAL E FEIJÃO<br> 
+                                            CREME DE MILHO VEGANO<br>                      SALADA DE ACELGA<br>                      MAÇÃ (RU e RA) BANANA (RS)<br>                      REFRESCO DE PÊSSEGO<br>                      <br>Observações: <br>
+                      CONTÉM GLÚTEN NO PÃO, NA TORTA DE GRÃO DE BICO, NA TORTA DE PTS E NO CREME DE MILHO.<br />
+PODE CONTER LEITE NO CREME DE MILHO.<br />
+NÃO CONTÉM OVOS.<br />
+<FONT COLOR ="RED"><br />
+TODOS OS DIAS SÃO SEM COPO.<br />
+As refeições serão servidas no RA, RU e RS.<br>                      </font>
+                    </div>
+                                  </div>
+              </div> 
+           </div>     
+          </div>     
+        </div>
+  
+    <div class="col-md-3">
+        <div class="row">
+          <div style="text-align:center; padding-top:60px">
+                    Acompanhe agora a fila do restaurante e planeje sua ida!
+            		    <div class="titulo_semana" style="padding-top:10px;"> Câmera RU </div>
+                        <img src="https://webservices.prefeitura.unicamp.br/cameras/thumb_cam_ru_a.jpg" alt="Câmera RU" class="img_thumbnail" id="thumbnail_ru_a">
+                        <br/>
+                        <meter id="meter_ru_a" min="0" max="15" low="6" optimum="5" high="9" title="pessoas" style="width: 180px;"></meter>
+                        <div id="cam_data_ru_a" style="font-size: 12px;"></div>
+
+                        <img src="https://webservices.prefeitura.unicamp.br/cameras/thumb_cam_ru_b.jpg" alt="Câmera RU" class="img_thumbnail" id="thumbnail_ru_b">
+                        <br/>
+                        <meter id="meter_ru_b" min="0" max="15" low="6" optimum="5" high="9" title="pessoas" style="width: 180px;"></meter>
+                        <div id="cam_data_ru_b" style="font-size: 12px;"></div>
+                        
+                        <div class="titulo_semana" style="padding-top:10px;"> Câmera RA </div>
+                        <img src="https://webservices.prefeitura.unicamp.br/cameras/thumb_cam_ra.jpg" alt="Câmera RA" class="img_thumbnail" id="thumbnail_ra">
+                        <br/>
+                        <meter id="meter_ra" min="0" max="15" low="6" optimum="5" high="9" title="pessoas" style="width: 180px;"></meter>
+                        <div id="cam_data_ra" style="font-size: 12px;"></div>
+                        
+                        <div class="titulo_semana" style="padding-top:10px;">Câmera RS </div>
+                        <img src="https://webservices.prefeitura.unicamp.br/cameras/thumb_cam_rs.jpg" alt="Câmera RS" class="img_thumbnail" id="thumbnail_rs">
+                        <br/>
+                        <meter id="meter_rs" min="0" max="15" low="6" optimum="5" high="9" title="pessoas" style="width: 180px;"></meter>
+                        <div id="cam_data_rs" style="font-size: 12px;"></div>
+                       
+                        <div id="scampus" style="width:100%; text-align:center; padding-top:20px; padding-left:10px">
+                           <a href="http://smartcampus.prefeitura.unicamp.br/#portfolio2" target="_blank">
+                            <img src="img/sc_icon.jpg" alt="Smart Campus" style="width:20%; box-shadow:none"/>Saiba mais
+                          </a>  
+                        </div>
+              </div>
+          </div>
+      </div>
+
+  </div>
+  </div>
+</div>
+
+
+<div id="dialog_ru_a" title="Câmera RU">
+  <p align="center">
+  	<img id="img_camera_ru_a"  alt="Câmera RU"  width="50%" height="50%"><br />
+  	<div style="width:100%;  float:right">
+      	<div id="cam_data2_ru_a" style="font-weight: bold;" ></div> 
+      	<div style="width:50%; float:right;">
+    		 <canvas id="media_ru_a"></canvas>
+    	</div>
+      	<div style="width:50%;">
+    		  <canvas id="total_ru_a"></canvas>
+    	</div>
+	</div>
+  </p>
+</div>
+
+<div id="dialog_ru_b" title="Câmera RU">
+  <p align="center">
+  	<img id="img_camera_ru_b" alt="Câmera RU"  width="50%" height="50%"><br />
+  	<div id="cam_data2_ru_b" style="font-weight: bold;"></div> 
+  	<div style="width:100%;  float:right">
+      	<div id="cam_data2_ru_b" style="font-weight: bold;" ></div> 
+      	<div style="width:50%; float:right">
+    		 <canvas id="media_ru_b"></canvas>
+    	</div>
+      	<div style="width:50%;">
+    		  <canvas id="total_ru_b"></canvas>
+    	</div>
+	</div>
+  </p>
+</div>
+
+<div id="dialog_ra" title="Câmera RA">
+  <p align="center">
+  	<img id="img_camera_ra" alt="Câmera RA"  width="50%" height="50%"><br />
+  	<div id="cam_data2_ra" style="font-weight: bold;"></div>
+  	<div style="width:100%;  float:right">
+      	<div id="cam_data2_ra" style="font-weight: bold;" ></div> 
+      	<div style="width:50%; float:right">
+    		 <canvas id="media_ra"></canvas>
+    	</div>
+      	<div style="width:50%;">
+    		  <canvas id="total_ra"></canvas>
+    	</div>
+	</div>
+  </p>
+</div>
+
+<div id="dialog_rs" title="Câmera RS">
+  <p align="center">
+  	<img id="img_camera_rs" alt="Câmera RS"  width="50%" height="50%"><br />
+  	<div id="cam_data2_rs" style="font-weight: bold;"></div> 
+  	<div style="width:100%;  float:right">
+      	<div id="cam_data2_rs" style="font-weight: bold;" ></div> 
+      	<div style="width:50%; float:right">
+    		 <canvas id="media_rs"></canvas>
+    	</div>
+      	<div style="width:50%;">
+    		  <canvas id="total_rs"></canvas>
+    	</div>
+	</div>
+  </p>
+</div>
+
+<script src="js/bootstrap/js/bootstrap.min.js"></script>
+<script src="js/agency.min.js"></script>
+
+<script>
+	
+	var camIds = ['ra','rs','ru_a','ru_b'];
+	camIds.forEach(carregando_cams_2)
+	
+	function carregando_cams_2(item, index, arr){
+
+		var camId = arr[index];
+		
+        $( "#dialog_" + camId ).dialog({ autoOpen: false, minWidth: 800, close:closeDialogImg(camId), 
+			open: function(event, ui) {
+                $(this).parent().css({'top': 80});
+            }
+        });
+    
+        $("#thumbnail_" + camId).hover(function() {
+        	$(this).css("cursor", "pointer");
+        	});
+    	
+        $( "#thumbnail_" + camId ).click(function() {
+        	seeProcessedImg(camId);
+        	updateCamData(camId);
+            intervalId = setInterval(seeProcessedImg,intervalTime,camId);
+          $( "#dialog_" + camId ).dialog( "open" );
+          $( "#btn_original_img_" + camId ).hide();
+          $( "#btn_processed_img_" + camId ).show();
+            graph_semana(camId);
+            graph_diario(camId);
+        });
+	}
+</script>
+
+</body>
+</html>
