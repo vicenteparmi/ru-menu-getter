@@ -8,3 +8,6 @@
 
 # Arquivos baixados pelos scrapers
 RU-AI-GETTER/downloaded_files/
+# Python cache
+__pycache__/
+*.pyc
