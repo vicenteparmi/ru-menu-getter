@@ -34,4 +34,4 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         timeout-minutes: 2
         run: |
-          ruby -r ./UFPR/source_http -rnokogiri -rbase64 -e '$stdout.sync = true; puts "Starting verified UFPR request"; html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-toledo/"); puts "Received #{html.bytesize} bytes"; doc = Nokogiri::HTML(html); doc.css("img").each { |img| img.remove_attribute("src") }; puts "Tables: #{doc.css("figure.wp-block-table").size}"; body = doc.css("p,figure.wp-block-table").select { |n| n.name == "figure" || n.css("strong").any? }.map(&:to_html).join("\n"); Base64.strict_encode64(body).scan(/.{1,120}/).each { |line| puts "UFPR_CHUNK=#{line}" }'
+          ruby -r ./UFPR/source_http -e 'html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-central/"); puts "UFPR TLS verified: #{html.bytesize} bytes received"'

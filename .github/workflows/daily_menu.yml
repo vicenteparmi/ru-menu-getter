@@ -36,7 +36,10 @@ jobs:
       contents: read
       issues: write
     
-    timeout-minutes: 30
+    timeout-minutes: 15
+    concurrency:
+      group: ufpr-menu-scraper
+      cancel-in-progress: false
 
     steps:
 
