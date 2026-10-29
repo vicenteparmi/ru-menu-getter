@@ -144,3 +144,35 @@ Esta interface integra-se com:
 ---
 
 **Desenvolvido para facilitar a gestão e aprovação dos cardápios dos Restaurantes Universitários** 🎓
+
+## CCA e Joinville sem IA
+
+Os coletores de CCA e Joinville agora usam as tabelas dos PDFs oficiais e as datas
+impressas no documento. Não escolhem arquivos antigos só porque o nome contém o
+número do dia ou da semana. Se não houver PDF para o dia solicitado, ou o formato
+mudar, a coleta retorna erro em vez de inventar datas/itens ou chamar uma IA.
+
+Na interface de `main.py`, escolha **3 = PDF sem IA** (CCA e Joinville). Esses
+coletores também usam a leitura direta ao serem selecionados nos outros modos.
+O fluxo existente de revisão/aprovação e upload permanece disponível.
+
+No servidor próprio, também é possível gerar os arquivos diretamente:
+
+```sh
+python collect_pdf_menu.py cca --output jsons/cca.json
+python collect_pdf_menu.py joinville --output jsons/joinville.json
+```
+
+Os comandos apenas geram JSON no formato existente; não escrevem no banco.
+Requerem requests, beautifulsoup4 e pdfplumber (validação realizada com 0.11.9),
+sem chave de IA nem OCR. Os arquivos podem seguir pelo fluxo de revisão existente.
+
+No CCA, o PDF semanal fornece os itens de almoço/jantar, mas não o cardápio do
+café da manhã; esse período fica sem itens informados. Isso não é confirmação de
+que o café não seja servido. Feriados explícitos no PDF são preservados como
+`Sem refeições disponíveis`. Em Joinville, preservam-se os horários/condições
+indicados no cabeçalho do café, inclusive a restrição a alunos isentos.
+
+O teste de regressão do GitHub apenas executa testes: **não agenda nem executa a
+coleta UFSC no GitHub**. Para usar as correções, atualize o checkout deste
+repositório no servidor que já executa os coletores.

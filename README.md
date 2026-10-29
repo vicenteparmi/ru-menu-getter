@@ -138,3 +138,16 @@ Contribuições são bem-vindas! Por favor, abra uma issue ou envie um pull requ
 ## Licença
 
 A licença deste projeto está disponível no arquivo [LICENSE](LICENSE).
+
+### Proteções dos coletores legados
+
+UFPR e UFABC executam em jobs independentes no workflow diário. A tentativa por
+proxies públicos é limitada a dois candidatos com timeout; uma fonte inacessível
+não deve prender a atualização da outra universidade. Ausência de datas ou
+quantidade divergente de datas/tabelas interrompe a gravação, evitando deslocar
+os cardápios entre dias. Falhas deixam de ser mascaradas por `continue-on-error`.
+
+UFSC e UFRGS continuam sob execução do servidor próprio. As correções publicadas
+para eles precisam ser carregadas nesse servidor; o workflow de regressão no
+GitHub executa somente testes. Veja [UFSC](RU-AI-GETTER/README.md) e
+[UFRGS](UFRGS/README.md) para os comandos e limites dos parsers.
