@@ -50,6 +50,45 @@ Este fluxo de trabalho pode ser acionado manualmente para realizar análise de d
 
 ## Requisitos
 
+### UFV — Viçosa, sem IA
+
+[`UFV.py`](UFV.py) consulta o JSON usado pelo calendário público da UFV,
+sem Gemini, navegador ou dependências externas (Python 3.11+).
+
+```sh
+# Somente coleta/validação; gravação é sempre explícita.
+python UFV.py --start 2026-10-29 --days 14 --output ufv-menus.json
+BASE_URL=https://seu-firebase.firebaseio.com FIREBASE_KEY=... python UFV.py --upload
+python -m unittest discover -s tests -p 'test_ufv.py' -v
+```
+
+O workflow independente [`ufv_menu.yml`](.github/workflows/ufv_menu.yml) executa
+a UFV duas vezes por dia (00:00 e 12:00 UTC), ou manualmente com
+`gh workflow run ufv_menu.yml`, reaproveitando `BASE_URI` e `SECRET`.
+Em pushes e pull requests, somente os testes locais são executados.
+A coleta começa no dia atual em America/Sao_Paulo e busca 14 dias.
+O portal responde por **HTTP**; HTTPS retorna 403. Envia-se apenas a data
+ao portal, sem credenciais. O Firebase é acessado exclusivamente por HTTPS.
+
+O catálogo fica em `menus/ufv-vicosa/rus/{ru-i,ru-ii,ru-iii}`; somente unidades
+com refeições publicadas no intervalo são cadastradas. Inicialmente a fonte
+publica RU II e RU III/Multiuso; não há cardápio do RU I no intervalo validado.
+Uma refeição com rótulo compartilhado é distribuída somente às unidades
+explicitamente indicadas, em cada data. Refeitórios ou refeições desconhecidos
+interrompem a coleta antes de qualquer escrita.
+
+Cada dia usa `[café, almoço, jantar]`, `weekday` em português e `timestamp`
+em segundos, no caminho `archive/menus/ufv-vicosa/rus/{ru}/menus/{data}` que
+o CampusDine (`vicenteparmi/ru`) já lê. Períodos sem serviço usam
+`Sem refeições disponíveis`. Datas sem publicação são ignoradas; em datas
+publicadas, a ausência de uma unidade conhecida é representada sem refeições.
+Itens mantêm categorias, observações e indicações de alergênicos da fonte.
+
+Uma atualização atômica e restrita a UFV grava catálogo e cardápios. Metadados
+existentes e outras universidades/datas são preservados. Cada cardápio gravado
+é relido para verificação. Novas unidades entram como `beta` e `isNew`.
+Não é necessária alteração nem nova versão do CampusDine para listar a UFV.
+
 - Ruby 3.4.1
 - Gems: nokogiri, firebase, google-cloud-firestore
 - Python (para análise de dados)
