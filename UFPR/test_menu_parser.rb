@@ -24,6 +24,13 @@ class UfprMenuParserTest < Minitest::Test
     assert value['menu'][2].any? { |item| item.include?('Tirinhas de carne') }
   end
 
+  def test_toledo_future_heading_without_table_does_not_discard_today
+    html = File.read(File.join(__dir__, 'fixtures/toledo-2026-10-29.html'))
+    result = UfprMenuParser.parse(html, today: Date.new(2026, 10, 29))
+    assert_equal ['2026-10-29'], result.keys
+    assert result['2026-10-29']['menu'][1].any? { |item| item.include?('Estrogonofe de carne') }
+  end
+
   def test_each_table_belongs_to_its_own_date
     result = UfprMenuParser.parse(day('28/10/2026', 'Primeiro') + day('29/10/2026', 'Segundo'))
     assert_equal 'Primeiro', result['2026-10-28']['menu'][1].first

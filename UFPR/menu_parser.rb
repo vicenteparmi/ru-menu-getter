@@ -13,7 +13,7 @@ module UfprMenuParser
     CGI.unescapeHTML(text.to_s).gsub(/\u00a0/, ' ').gsub(/\s+/, ' ').strip
   end
 
-  def self.parse(html)
+  def self.parse(html, today: Date.today)
     doc = Nokogiri::HTML(html)
     result = {}
     pending = nil
@@ -23,7 +23,7 @@ module UfprMenuParser
         heading = clean(node.css('strong').map(&:text).join(' '))
         match = heading.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})\b/)
         next unless match && heading.match?(/Segunda|Terça|Terca|Quarta|Quinta|Sexta|Sábado|Sabado|Domingo|FERIADO|RECESSO/i)
-        raise Error, "Tabela ausente para #{pending}" if pending && !closed
+        raise Error, "Tabela ausente para #{pending}" if pending && !closed && pending <= today
         year = match[3].length == 2 ? 2000 + match[3].to_i : match[3].to_i
         pending = Date.new(year, match[2].to_i, match[1].to_i)
         closed = heading.match?(/FERIADO|RECESSO|FECHADO/i)
@@ -37,7 +37,8 @@ module UfprMenuParser
         closed = false
       end
     end
-    raise Error, "Tabela ausente para #{pending}" if pending && !closed
+    raise Error, "Tabela ausente para #{pending}" if pending && !closed && pending <= today
+    warn "[UFPR] #{pending}: cabeçalho futuro sem tabela; cardápio ainda não publicado" if pending && !closed && pending > today
     raise Error, 'Nenhum cardápio com data explícita encontrado' if result.empty?
     result
   rescue Date::Error => e
