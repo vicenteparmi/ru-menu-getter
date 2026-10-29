@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main, fix/remaining-menu-collectors]
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
   pull_request:
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
 permissions:
   contents: read
 jobs:
@@ -33,11 +33,8 @@ jobs:
           SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
         run: |
           ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI(url).open(open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal
-      - name: Inspect UFPR public certificate chain
+      - name: Verify UFPR access and capture public menu markup
         if: github.event_name == 'workflow_dispatch'
         run: |
-          timeout 20 openssl s_client -connect p4e.ufpr.br:443 -servername p4e.ufpr.br -showcerts </dev/null > /tmp/ufpr-chain.txt 2>/tmp/ufpr-tls.txt || true
-          openssl x509 -in /tmp/ufpr-chain.txt -out /tmp/ufpr-leaf.pem
-          openssl x509 -in /tmp/ufpr-leaf.pem -noout -issuer -subject -dates -ext authorityInfoAccess
-          cat /tmp/ufpr-tls.txt
-          curl -I --max-time 20 http://p4e.ufpr.br/ru/cardapio-ru-central/ || true
+          gem install nokogiri --no-document
+          ruby -r ./UFPR/source_http -rnokogiri -rbase64 -e 'html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-central/"); doc = Nokogiri::HTML(html); puts "UFPR_PUBLIC_HTML=" + Base64.strict_encode64(doc.css("p,figure.wp-block-table").map(&:to_html).join("\n")); puts "UFPR TLS verified; #{html.bytesize} bytes; #{doc.css("figure.wp-block-table").size} tables"'
