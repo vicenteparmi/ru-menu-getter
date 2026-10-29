@@ -8,8 +8,9 @@ hostname e validade continuam sendo verificados; não há downgrade HTTP ou prox
 público. A origem, fingerprint e validade estão documentadas em `certs/README.md`.
 
 `menu_parser.rb` associa cada cabeçalho de data à tabela seguinte, em vez de
-combinar duas listas independentes. Preserva opções e avisos de alergênicos dos
-ícones. Cabeçalhos futuros sem tabela (como o de Toledo em 30/10/2026) não são
+combinar duas listas independentes. Preserva os nomes dos pratos e as opções
+veganas, sem acrescentar os rótulos dos ícones (como “Contém glúten”).
+Cabeçalhos futuros sem tabela (como o de Toledo em 30/10/2026) não são
 tratados como cardápios publicados. Datas atuais/passadas sem tabela continuam
 sendo reportadas como erro; datas inválidas ou duplicadas são rejeitadas.
 
