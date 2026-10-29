@@ -261,13 +261,13 @@ def prompt_user_options():
     last_runs = load_last_runs()
     # Escolha do método
     while True:
-        metodo = input("Escolha o método de parsing (1=Ollama, 2=Google Gemini, q=abandonar): ").strip().lower()
+        metodo = input("Escolha o método de parsing (1=Ollama, 2=Google Gemini, 3=PDF sem IA, q=abandonar): ").strip().lower()
         if metodo == "q":
             print("Operação cancelada pelo usuário.")
             exit(0)
-        if metodo in ("1", "2"): break
-        print("Opção inválida. Digite 1, 2 ou q.")
-    metodo = "ollama" if metodo == "1" else "gemini"
+        if metodo in ("1", "2", "3"): break
+        print("Opção inválida. Digite 1, 2, 3 ou q.")
+    metodo = {"1": "ollama", "2": "gemini", "3": "pdf"}[metodo]
     # Modelos pré-definidos para Gemini
     gemini_modelos = [
         "gemma-3-27b-it",
@@ -291,12 +291,14 @@ def prompt_user_options():
                 break
             else:
                 print("Seleção inválida.")
-    else:
+    elif metodo == "ollama":
         modelo = input("Informe o modelo a ser usado (ex: ollama/llama3) ou q para abandonar: ").strip()
         if modelo.lower() == "q":
             print("Operação cancelada pelo usuário.")
             exit(0)
         modelo = modelo or "llama3"
+    else:
+        modelo = None
     # API key se Gemini
     api_key = None
     if metodo == "gemini":
@@ -313,6 +315,8 @@ def prompt_user_options():
         ("Trindade", FlorianopolisTrindadeScraper),
         ("Joinville", JoinvilleScraper),
     ]
+    if metodo == "pdf":
+        rus_disponiveis = [(name, cls) for name, cls in rus_disponiveis if hasattr(cls, "get_menu_data")]
     print("\nSelecione os RUs a serem processados (ex: 1,3,5 ou q para abandonar):")
     for i, (nome, _) in enumerate(rus_disponiveis, 1):
         data = last_runs.get(nome, "nunca")
@@ -368,21 +372,25 @@ def run_all_scrapers_interactive():
         scraper = ScraperClass()
         try:
             print(highlight(f"\n===== {nome} ====="))
-            print(info("Obtendo texto do cardápio..."))
-            menu = scraper.get_menu_text()
-            menu_clean = clean_menu_text(menu)
-            print(info("Texto limpo obtido (mostrando primeiras 3 linhas):"))
-            preview = '\n'.join(menu_clean.splitlines()[:3])
-            print(preview + ("\n..." if len(menu_clean.splitlines()) > 3 else ""))
-            # Parsing
-            if metodo == "ollama":
-                print(info("Enviando para o Ollama..."))
-                image_path = getattr(scraper, 'get_menu_image_path', lambda: None)()
-                parsed = parse_menu_with_ollama(menu_clean, model=modelo, image_path=image_path)
+            if hasattr(scraper, 'get_menu_data'):
+                print(info("Lendo tabela PDF diretamente, sem IA..."))
+                parsed = scraper.get_menu_data()
             else:
-                print(info("Enviando para o Gemini..."))
-                image_path = getattr(scraper, 'get_menu_image_path', lambda: None)()
-                parsed = parse_menu_with_gemini(menu_clean, model=modelo, api_key=api_key, image_path=image_path)
+                print(info("Obtendo texto do cardápio..."))
+                menu = scraper.get_menu_text()
+                menu_clean = clean_menu_text(menu)
+                print(info("Texto limpo obtido (mostrando primeiras 3 linhas):"))
+                preview = '\n'.join(menu_clean.splitlines()[:3])
+                print(preview + ("\n..." if len(menu_clean.splitlines()) > 3 else ""))
+                # Parsing
+                if metodo == "ollama":
+                    print(info("Enviando para o Ollama..."))
+                    image_path = getattr(scraper, 'get_menu_image_path', lambda: None)()
+                    parsed = parse_menu_with_ollama(menu_clean, model=modelo, image_path=image_path)
+                else:
+                    print(info("Enviando para o Gemini..."))
+                    image_path = getattr(scraper, 'get_menu_image_path', lambda: None)()
+                    parsed = parse_menu_with_gemini(menu_clean, model=modelo, api_key=api_key, image_path=image_path)
             # Validação
             if use_validator:
                 print(info("[VALIDAÇÃO] Verificando formato do JSON..."))
@@ -398,7 +406,7 @@ def run_all_scrapers_interactive():
                         print(warning(f"   ... e mais {len(errors) - 5} erros"))
                     parsed = validated_json
                     print(warning("[VALIDAÇÃO] Usando JSON corrigido automaticamente"))
-            print(info("[IA] JSON final salvo (primeiras 5 linhas):"))
+            print(info("[DADOS] JSON final salvo (primeiras 5 linhas):"))
             json_preview = json.dumps(parsed, ensure_ascii=False, indent=2).splitlines()[:5]
             print('\n'.join(json_preview) + ("\n..." if len(json_preview) == 5 else ""))
             # Salva o JSON

@@ -5,6 +5,7 @@ import datetime
 import re
 import io
 import os
+from urllib.parse import urlparse
 from datetime import datetime as dt
 
 class RestaurantScraper:
@@ -12,7 +13,7 @@ class RestaurantScraper:
     Classe base para scrapers de restaurantes. Permite fácil extensão para novos restaurantes.
     """
     def fetch_html(self, url):
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=30)
         resp.raise_for_status()
         return resp.text
 
@@ -45,9 +46,25 @@ class RestaurantScraper:
         return pdf_links_with_dates[0][0]
 
     def download_pdf(self, url):
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=30)
         resp.raise_for_status()
+        if not resp.content.startswith(b'%PDF-'):
+            raise ValueError('A fonte não retornou um PDF válido')
         return io.BytesIO(resp.content)
+
+    def current_pdf(self, url, date=None):
+        from .pdf_menu import dates_in_text
+        date = date or datetime.date.today()
+        soup = BeautifulSoup(self.fetch_html(url), 'html.parser')
+        links = list(dict.fromkeys(requests.compat.urljoin(url, a['href'])
+                                  for a in soup.find_all('a', href=True)
+                                  if urlparse(a['href']).path.lower().endswith('.pdf')))
+        for link in links[:8]:
+            pdf_bytes = self.download_pdf(link)
+            text = self.extract_text_from_pdf(pdf_bytes)
+            if date in dates_in_text(text):
+                return pdf_bytes, text
+        raise ValueError(f'Nenhum PDF publicado para {date.isoformat()} em {url}')
 
     def extract_text_from_pdf(self, pdf_bytes):
         with pdfplumber.open(pdf_bytes) as pdf:

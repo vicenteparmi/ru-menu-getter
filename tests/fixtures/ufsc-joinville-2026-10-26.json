@@ -1,0 +1,194 @@
+{
+  "text": "CARDÁPIO SEMANAL\nSegunda-feira Terça-feira Quarta-feira Quinta-feira Sexta-feira Sábado Domingo\n26/10/2026 27/10/2026 28/10/2026 29/10/2026 30/10/2026 31/10/2026 01/11/2026\nCAFÉ DA MANHÃ (07:00 às 08:30) Exclusivo para alunos isentos de pagamento.\nCafé passado Café passado Café passado Café passado Café passado\nLeite Leite Leite Leite Leite\nChá de erva doce Chá cidreira Chá de erva doce Chá de hortelã Chá de erva doce\nPão tipo francês c/ Pão tipo francês c/ Pão tipo francês c/ Pão tipo francês c/ Pão tipo francês c/ SEM ATENDIMENTO\ncreme vegetal geléia creme vegetal geléia creme vegetal\nTorta salgada com\nBolo de cenoura Bolo de fubá Torta salgada com PTS Bolo de laranja\nlegumes\nFruta Fruta Fruta Fruta Fruta\nALMOÇO / JANTAR (11:00 às 13:30 / 17:00 às 19:00)\nSalada de cenoura Salada duo beterraba e Salada de beterraba Salada de cenoura\nSalada de pepino Salada de abobrinha Salada de pepino\ncozida cenoura ralada cozida ralada\nSalada de repolho Salada de acelga com Salada de repolho\nSalada de acelga Salada mix de folhas Salada mix de folhas Salada de acelga\ncolorido almeirão colorido\nMolho de mostarda Molho rosê Molho de limão Molho vinagrete Molho rosê Molho oriental Molho verde\nArroz Parboilizado Arroz Parboilizado Arroz Parboilizado Arroz Parboilizado Arroz Parboilizado Arroz Parboilizado Arroz Parboilizado\nArroz Integral Arroz Integral Arroz Integral Arroz Integral Arroz Integral Arroz Integral Arroz Integral\nFeijão Preto Feijão Carioca Feijão Preto Feijão Vermelho Feijão Preto Feijão Carioca Feijão Preto\nPolenta cremosa Farofa Crocante Batata Doce cozida Canjiquinha Aipim cozido Farofa de cenoura Mix de legumes cozidos\nErvilha refogada Proteína de soja Lentilha refogada Feijão branco Lentilha refogada Ervilha refogada Grão de bico\nFrango ao molho Carne moída com Frango ao molho Bisteca ao molho Almôndegas ao molho\nFrango ao molho sugo Bisteca acebolada\noriental legumes Xadrez oriental sugo\nFruta Arroz doce Fruta Docinho Fruta Pudim Fruta\n*Cardápio sujeito à alterações",
+  "table": [
+    [
+      "CARDÁPIO SEMANAL",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      "Segunda-feira",
+      "Terça-feira",
+      "Quarta-feira",
+      "Quinta-feira",
+      "Sexta-feira",
+      "Sábado",
+      "Domingo"
+    ],
+    [
+      "26/10/2026",
+      "27/10/2026",
+      "28/10/2026",
+      "29/10/2026",
+      "30/10/2026",
+      "31/10/2026",
+      "01/11/2026"
+    ],
+    [
+      "CAFÉ DA MANHÃ (07:00 às 08:30) Exclusivo para alunos isentos de pagamento.",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      "Café passado",
+      "Café passado",
+      "Café passado",
+      "Café passado",
+      "Café passado",
+      "SEM ATENDIMENTO",
+      null
+    ],
+    [
+      "Leite",
+      "Leite",
+      "Leite",
+      "Leite",
+      "Leite",
+      null,
+      null
+    ],
+    [
+      "Chá de erva doce",
+      "Chá cidreira",
+      "Chá de erva doce",
+      "Chá de hortelã",
+      "Chá de erva doce",
+      null,
+      null
+    ],
+    [
+      "Pão tipo francês c/\ncreme vegetal",
+      "Pão tipo francês c/\ngeléia",
+      "Pão tipo francês c/\ncreme vegetal",
+      "Pão tipo francês c/\ngeléia",
+      "Pão tipo francês c/\ncreme vegetal",
+      null,
+      null
+    ],
+    [
+      "Bolo de cenoura",
+      "Torta salgada com\nlegumes",
+      "Bolo de fubá",
+      "Torta salgada com PTS",
+      "Bolo de laranja",
+      null,
+      null
+    ],
+    [
+      "Fruta",
+      "Fruta",
+      "Fruta",
+      "Fruta",
+      "Fruta",
+      null,
+      null
+    ],
+    [
+      "ALMOÇO / JANTAR (11:00 às 13:30 / 17:00 às 19:00)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      "Salada de pepino",
+      "Salada de cenoura\ncozida",
+      "Salada de abobrinha",
+      "Salada duo beterraba e\ncenoura ralada",
+      "Salada de pepino",
+      "Salada de beterraba\ncozida",
+      "Salada de cenoura\nralada"
+    ],
+    [
+      "Salada de acelga",
+      "Salada mix de folhas",
+      "Salada de repolho\ncolorido",
+      "Salada mix de folhas",
+      "Salada de acelga com\nalmeirão",
+      "Salada de acelga",
+      "Salada de repolho\ncolorido"
+    ],
+    [
+      "Molho de mostarda",
+      "Molho rosê",
+      "Molho de limão",
+      "Molho vinagrete",
+      "Molho rosê",
+      "Molho oriental",
+      "Molho verde"
+    ],
+    [
+      "Arroz Parboilizado",
+      "Arroz Parboilizado",
+      "Arroz Parboilizado",
+      "Arroz Parboilizado",
+      "Arroz Parboilizado",
+      "Arroz Parboilizado",
+      "Arroz Parboilizado"
+    ],
+    [
+      "Arroz Integral",
+      "Arroz Integral",
+      "Arroz Integral",
+      "Arroz Integral",
+      "Arroz Integral",
+      "Arroz Integral",
+      "Arroz Integral"
+    ],
+    [
+      "Feijão Preto",
+      "Feijão Carioca",
+      "Feijão Preto",
+      "Feijão Vermelho",
+      "Feijão Preto",
+      "Feijão Carioca",
+      "Feijão Preto"
+    ],
+    [
+      "Polenta cremosa",
+      "Farofa Crocante",
+      "Batata Doce cozida",
+      "Canjiquinha",
+      "Aipim cozido",
+      "Farofa de cenoura",
+      "Mix de legumes cozidos"
+    ],
+    [
+      "Ervilha refogada",
+      "Proteína de soja",
+      "Lentilha refogada",
+      "Feijão branco",
+      "Lentilha refogada",
+      "Ervilha refogada",
+      "Grão de bico"
+    ],
+    [
+      "Frango ao molho sugo",
+      "Bisteca acebolada",
+      "Frango ao molho\noriental",
+      "Carne moída com\nlegumes",
+      "Frango ao molho\nXadrez",
+      "Bisteca ao molho\noriental",
+      "Almôndegas ao molho\nsugo"
+    ],
+    [
+      "Fruta",
+      "Arroz doce",
+      "Fruta",
+      "Docinho",
+      "Fruta",
+      "Pudim",
+      "Fruta"
+    ]
+  ]
+}

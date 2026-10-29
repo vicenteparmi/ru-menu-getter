@@ -1,0 +1,35 @@
+name: Collector regression tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, fix/remaining-menu-collectors]
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+  pull_request:
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install requests beautifulsoup4 pdfplumber==0.11.9
+      - run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.1'
+      - run: ruby UFRGS/test_menu_dates.rb
+      - run: |
+          ruby -c UFRGS/UFRGS.rb
+          ruby -c UFPR.rb
+          ruby -c UFABC.rb
+      - name: Diagnose official source access (read only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
+        run: |
+          ruby -ropen-uri -e 'ARGV.each { |url| begin; body = URI.open(url, open_timeout: 10, read_timeout: 15).read; puts "#{url}: OK #{body.bytesize} bytes"; rescue => e; puts "#{url}: #{e.class}: #{e.message}"; end }' https://p4e.ufpr.br/ru/cardapio-ru-central/ https://proap.ufabc.edu.br/nutricao-e-restaurantes-universitarios/cardapio-semanal

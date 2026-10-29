@@ -4,6 +4,7 @@ require 'nokogiri'
 require 'date'
 require 'net/http'
 require 'openssl'
+require_relative 'menu_dates'
 
 # Dry run mode check
 DRY_RUN = false
@@ -55,7 +56,6 @@ def fetch_with_retry(url, max_retries = 5, timeout = 45)
     http.use_ssl = (uri.scheme == 'https')
     http.open_timeout = timeout
     http.read_timeout = timeout
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if http.use_ssl?
     request = Net::HTTP::Get.new(uri)
     request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     request['Accept'] = 'text/html,application/xhtml+xml,application/xml'
@@ -80,30 +80,7 @@ end
 
 # Parses "Almoço 23 a 27 de março" → { meal_index:, initial_date:, days_count: }
 def extract_date_range(title)
-  title_clean = clean_text(title)
-  current_year = Date.today.year
-
-  meal_index = if title_clean.downcase.include?('jantar')
-                 2
-               elsif title_clean.downcase.include?('café') || title_clean.downcase.include?('lanche')
-                 0
-               else
-                 1 # almoço
-               end
-
-  if m = title_clean.match(/(\d{1,2})\s+a\s+(\d{1,2})\s+de\s+([[:alpha:]]+)/i)
-    month = MONTH_MAP[m[3].downcase]
-    return nil unless month
-    initial = Date.new(current_year, month, m[1].to_i)
-    final   = Date.new(current_year, month, m[2].to_i)
-    {
-      meal_index:   meal_index,
-      initial_date: initial.strftime('%Y-%m-%d'),
-      days_count:   (final - initial).to_i
-    }
-  else
-    nil
-  end
+  UfrgsMenuDates.extract(title)
 end
 
 def header_to_wday(header_text)

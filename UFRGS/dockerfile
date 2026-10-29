@@ -5,7 +5,7 @@ FROM ruby:3.4.3-slim
 WORKDIR /app
 
 # Copia o seu script para dentro do container
-COPY UFRGS.rb .
+COPY UFRGS.rb menu_dates.rb ./
 
 # Se precisar de gems, você pode instalar aqui
 RUN gem install nokogiri firebase

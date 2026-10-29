@@ -6,6 +6,7 @@ require 'firebase'
 require 'open-uri'
 require 'nokogiri'
 require 'json'
+require 'time'
 
 # Create the array with all the info
 data = {
@@ -73,10 +74,10 @@ def open_url_with_proxy_fallback(url)
   fetch_proxies if $proxies.nil? || $proxies.empty?
 
   # Try each proxy
-  $proxies.each_with_index do |proxy, index|
+  $proxies.first(2).each_with_index do |proxy, index|
     begin
       puts "Trying proxy #{index + 1}/#{$proxies.length}: http://#{proxy}..."
-      temp_content = URI.open(url, proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 10, open_timeout: 5)
+      temp_content = URI.open(url, proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5)
       html_str = temp_content.read
       
       # Check if it looks like a valid page and not a block page
@@ -117,6 +118,8 @@ def scrape_menu(name, url, city)
 
   # Get the date of all the menus. The date is in the format 18/03 (day/month) and is inside a css class called "span8", inside a table that can be fount as
   dates = doc.css(".span8").map { |date| date.text ? date.text.split.first : nil }.compact
+
+  raise 'Nenhuma data de cardápio encontrada na fonte UFABC' if dates.empty?
 
   # Parse the date to the format YYYY-MM-DD
   dates = dates.map do |date|
@@ -176,6 +179,10 @@ def scrape_menu(name, url, city)
       menu += sobremesas
     end
     menu
+  end
+
+  unless almoco.length == dates.length && jantar.length == dates.length
+    raise "Cardápio UFABC desalinhado: #{dates.length} datas, #{almoco.length} almoços, #{jantar.length} jantares"
   end
 
   # Make a element for each date

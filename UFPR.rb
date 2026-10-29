@@ -121,10 +121,10 @@ def open_url_with_proxy_fallback(url)
   fetch_proxies if $proxies.nil? || $proxies.empty?
 
   # Try each proxy
-  $proxies.each_with_index do |proxy, index|
+  $proxies.first(2).each_with_index do |proxy, index|
     begin
       puts "Trying proxy #{index + 1}/#{$proxies.length}: http://#{proxy}..."
-      temp_content = URI.open(url, proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 10, open_timeout: 5)
+      temp_content = URI.open(url, proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5)
       html_str = temp_content.read
       
       # Check if it looks like a valid page and not a block page
@@ -251,6 +251,10 @@ def scrape_menu(name, url, city)
     menut << [cafe_da_manha, almoco, jantar]
   end
 
+  if date.empty? || menut.empty? || date.length != menut.length
+    raise "Datas e tabelas de cardápio ausentes ou desalinhadas: #{date.length} datas, #{menut.length} tabelas"
+  end
+
   for i in 0..menut.length-1
     element = [
       date[i],
@@ -366,3 +370,4 @@ else
     File.open(ENV['GITHUB_OUTPUT'], 'a') { |f| f.puts "failure_count=#{failed_rus.length}" }
   end
 end
+exit(failed_rus.empty? ? 0 : 1)
