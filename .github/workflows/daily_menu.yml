@@ -69,7 +69,7 @@ jobs:
         FIREBASE_KEY: ${{ secrets.SECRET }} 
         BASE_URL: ${{ secrets.BASE_URI }}
       run: ruby UFPR.rb
-      continue-on-error: true
+      timeout-minutes: 10
 
     - name: Notify UFPR scraping failures via GitHub Issue
       if: always() && steps.ufpr.outputs.has_failures == 'true' || hashFiles('ufpr_failures.md') != ''
@@ -85,13 +85,6 @@ jobs:
         BODY=$(cat ufpr_failures.md)
         gh issue create --title "$TITLE" --body "$BODY" --label "scraper-failure"
 
-    - name: Get UFABC menus
-      env:
-        FIREBASE_KEY: ${{ secrets.SECRET }} 
-        BASE_URL: ${{ secrets.BASE_URI }}
-      run: ruby UFABC.rb
-      continue-on-error: true
-
     # - name: Get UFRGS menus
     #   env:
     #     FIREBASE_KEY: ${{ secrets.SECRET }} 
@@ -105,6 +98,30 @@ jobs:
     #     BASE_URL: ${{ secrets.BASE_URI }}
     #     GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
     #   run: ruby movedata_today.rb
+
+  update-ufabc:
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '0 12,0 * * *') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'daily'))
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    concurrency:
+      group: ufabc-menu-scraper
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.1'
+      - run: gem install nokogiri firebase --no-document
+      - name: Collect UFABC menus
+        env:
+          FIREBASE_KEY: ${{ secrets.SECRET }}
+          BASE_URL: ${{ secrets.BASE_URI }}
+        run: ruby UFABC.rb
+        timeout-minutes: 3
 
   update-utfpr:
     if: >-

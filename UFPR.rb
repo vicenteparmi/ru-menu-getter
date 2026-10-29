@@ -7,6 +7,7 @@ require 'firebase'
 require 'open-uri'
 require 'nokogiri'
 require 'json'
+require 'date'
 
 # Create the array with all the info
 data = {
@@ -75,7 +76,7 @@ def fetch_proxies
   # 1. Fetch from ProxyScrape
   begin
     proxy_list_url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=BR&ssl=all&anonymity=all"
-    proxy_data = URI.open(proxy_list_url, "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5).read
+    proxy_data = URI(proxy_list_url).open( "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5).read
     ps_proxies = proxy_data.split("\n").map(&:strip).reject(&:empty?)
     proxies.concat(ps_proxies)
     puts "Fetched #{ps_proxies.length} proxies from ProxyScrape."
@@ -86,7 +87,7 @@ def fetch_proxies
   # 2. Fetch from Geonode
   begin
     geonode_url = "https://proxylist.geonode.com/api/proxy-list?limit=150&page=1&sort_by=lastChecked&sort_type=desc&country=BR&protocols=http"
-    geonode_data = URI.open(geonode_url, "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5).read
+    geonode_data = URI(geonode_url).open( "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5).read
     json = JSON.parse(geonode_data)
     gn_proxies = json['data'].map { |p| "#{p['ip']}:#{p['port']}" }
     proxies.concat(gn_proxies)
@@ -106,7 +107,7 @@ def open_url_with_proxy_fallback(url)
   # Try direct connection first
   begin
     puts "Attempting direct connection to #{url}..."
-    temp_content = URI.open(url, "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5)
+    temp_content = URI(url).open( "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5)
     html_str = temp_content.read
     if html_str.downcase.include?("cardápio") || html_str.downcase.include?("almoço")
       return html_str
@@ -121,10 +122,10 @@ def open_url_with_proxy_fallback(url)
   fetch_proxies if $proxies.nil? || $proxies.empty?
 
   # Try each proxy
-  $proxies.each_with_index do |proxy, index|
+  $proxies.first(2).each_with_index do |proxy, index|
     begin
       puts "Trying proxy #{index + 1}/#{$proxies.length}: http://#{proxy}..."
-      temp_content = URI.open(url, proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 10, open_timeout: 5)
+      temp_content = URI(url).open( proxy: "http://#{proxy}", "User-Agent" => user_agent, read_timeout: 5, open_timeout: 5)
       html_str = temp_content.read
       
       # Check if it looks like a valid page and not a block page
@@ -251,11 +252,15 @@ def scrape_menu(name, url, city)
     menut << [cafe_da_manha, almoco, jantar]
   end
 
+  if date.empty? || menut.empty? || date.length != menut.length
+    raise "Datas e tabelas de cardápio ausentes ou desalinhadas: #{date.length} datas, #{menut.length} tabelas"
+  end
+
   for i in 0..menut.length-1
     element = [
       date[i],
       weekday[i],
-      menut[i],
+      menut[i].map { |meal| meal.is_a?(Array) && !meal.empty? ? meal : ["Sem refeições disponíveis"] },
       Time.now.to_i
     ]
     menu[i] = element
@@ -285,10 +290,13 @@ def scrape_menu(name, url, city)
       next  # Skip this iteration if date parsing failed
     end
 
+    Date.iso8601(date_str) # Reject invalid calendar dates before writing.
     element[0] = date_str
 
     # Update the database (directly to archive path)
     response = firebase.set("archive/menus/#{city}/rus/#{name}/menus/#{element[0]}", { :weekday => element[1], :menu => element[2], :timestamp => element[3] })
+
+    raise "Firebase HTTP #{response.code}" unless response.success?
 
     # Return the response
     puts "[GETTING DATA > #{city} > #{name}] Response: #{response.code}. Finished for #{element[0]}."
@@ -366,3 +374,4 @@ else
     File.open(ENV['GITHUB_OUTPUT'], 'a') { |f| f.puts "failure_count=#{failed_rus.length}" }
   end
 end
+exit(failed_rus.empty? ? 0 : 1)
