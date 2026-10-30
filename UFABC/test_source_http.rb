@@ -8,16 +8,19 @@ class UfabcSourceTest < Minitest::Test
 
   def fetch_with(responses)
     calls = 0
-    opener = lambda do |url, **options, &block|
-      assert_equal URL, url
-      assert_equal 20, options[:read_timeout]
+    test = self
+    opener = lambda do |**options, &block|
+      test.assert_equal 20, options[:read_timeout]
       calls += 1
       response = responses.shift
       raise response if response.is_a?(Exception)
       block.call(StringIO.new(response))
     end
     result = nil
-    URI.stub(:open, opener) do
+    source = Object.new
+    source.define_singleton_method(:open, &opener)
+    parse_uri = ->(url) { assert_equal URL, url; source }
+    UfabcSource.stub(:URI, parse_uri) do
       UfabcSource.stub(:sleep, nil) { result = yield }
     end
     [result, calls]

@@ -11,7 +11,7 @@ module UfabcSource
 
     attempts.times do |index|
       begin
-        html = URI.open(url, 'User-Agent' => USER_AGENT, open_timeout: 10, read_timeout: 20, &:read)
+        html = URI(url).open( 'User-Agent' => USER_AGENT, open_timeout: 10, read_timeout: 20, &:read)
         raise Error, 'UFABC source returned no menu content' unless html.match?(/cardápio|almoço/i)
 
         return html
