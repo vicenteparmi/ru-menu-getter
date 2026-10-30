@@ -27,23 +27,23 @@ module UnicampMenus
       'university' => 'UNICAMP',
       'rus' => {
         'ru' => ['RU', 'Av. Érico Veríssimo, 50 - Cidade Universitária, Campinas - SP'],
-        'ra' => ['RA', 'Rua Bernardo Sayão, 198 - Cidade Universitária, Campinas - SP'],
-        'rs' => ['RS', 'Rua Saturnino de Brito, 314 - Cidade Universitária, Campinas - SP']
+        'ra' => ['Administração', 'Rua Bernardo Sayão, 198 - Cidade Universitária, Campinas - SP'],
+        'rs' => ['Saturnino', 'Rua Saturnino de Brito, 314 - Cidade Universitária, Campinas - SP']
       }
     },
     'lim' => {
       'name' => 'Limeira, São Paulo',
       'university' => 'UNICAMP',
       'rus' => {
-        'rli' => ['RLI', 'Rua Paschoal Marmo, 1888 - Jardim Nova Itália, Limeira - SP, 13484-332'],
-        'rlii' => ['RLII', 'Rua Pedro Zaccaria, 1300 - Jardim São Paulo, Limeira - SP, 13484-350']
+        'rli' => ['Campus I', 'Rua Paschoal Marmo, 1888 - Jardim Nova Itália, Limeira - SP, 13484-332'],
+        'rlii' => ['Campus II', 'Rua Pedro Zaccaria, 1300 - Jardim São Paulo, Limeira - SP, 13484-350']
       }
     },
     'pir' => {
       'name' => 'Piracicaba, São Paulo',
       'university' => 'UNICAMP',
       'rus' => {
-        'rfop' => ['RFOP', 'Av. Limeira, 901 - Areião, Piracicaba - SP, 13414-903']
+        'rfop' => ['FOP', 'Av. Limeira, 901 - Areião, Piracicaba - SP, 13414-903']
       }
     }
   }.freeze
