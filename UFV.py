@@ -23,6 +23,17 @@ RESTAURANTS = {
     'ru-ii': 'Restaurante Universitário II (RU II)',
     'ru-iii': 'Restaurante Universitário III (Multiuso)',
 }
+# Official DAL status: https://dal.ufv.br/horarios-ru/ (checked 2026-10-30).
+CLOSED_NOTICES = {
+    'ru-i': {
+        'status': 'maintenance', 'displayMessage': True,
+        'messageTitle': 'Fechado para reforma',
+        'messageContent': 'O RU I está fechado para reforma. As refeições antes servidas '
+                          'nesta unidade foram transferidas para o RU III (Multiuso). '
+                          'Consulte os cardápios do RU II e do RU III.',
+        'updateModeIsAuto': False,
+    },
+}
 # Labels, rather than numerical group IDs, identify which physical units serve a meal.
 REFECTORIES = {
     'RU I': ('ru-i',),
@@ -162,12 +173,18 @@ class Firebase:
                 changes[f'menus/{CITY}/{field}'] = value
         timestamp = int(time.time())
         expected = {}
-        for restaurant, dates in menus.items():
+        catalog_restaurants = sorted(set(menus) | set(CLOSED_NOTICES))
+        for restaurant in catalog_restaurants:
+            dates = menus.get(restaurant, {})
             metadata = {
                 'name': RESTAURANTS[restaurant], 'address': 'Campus UFV - Viçosa, MG',
                 'displayMessage': False, 'isNew': True, 'status': 'beta',
                 'updateFrequency': 'daily', 'updateModeIsAuto': True,
             }
+            # Seed the closure notice only while this unit has no published menu.
+            # Existing administrator settings are always preserved.
+            if restaurant not in menus:
+                metadata.update(CLOSED_NOTICES[restaurant])
             stored = (existing.get('rus') or {}).get(restaurant) or {}
             for field, value in metadata.items():
                 if field not in stored:
@@ -182,7 +199,7 @@ class Firebase:
             if self.call(path) != payload:
                 raise RuntimeError(f'Firebase verification failed for {path}')
         catalog = self.call(f'menus/{CITY}')
-        for restaurant in menus:
+        for restaurant in catalog_restaurants:
             if not catalog.get('rus', {}).get(restaurant, {}).get('name'):
                 raise RuntimeError('Firebase catalog verification failed')
         print(f'[UFV] {len(expected)} restaurant-days uploaded and read back successfully.')
