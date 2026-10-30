@@ -84,7 +84,7 @@ class FirebaseTests(unittest.TestCase):
 
     def test_closed_ru_i_is_catalog_only_and_admin_notice_is_preserved(self):
         existing = {'university': 'UFV', 'rus': {
-            'ru-i': {'name': 'RU I', 'messageContent': 'Aviso revisado'},
+            'ru-i': {'name': 'Restaurante Universitário I (RU I)', 'messageContent': 'Aviso revisado'},
             'ru-iii': {'name': 'Multiuso'},
         }}
         writes = []
@@ -100,6 +100,8 @@ class FirebaseTests(unittest.TestCase):
             store.upload(self.menus)
         changes = writes[0]
         prefix = f'menus/{UFV.CITY}/rus/ru-i/'
+        self.assertEqual(changes[prefix + 'name'], 'RU I')
+        self.assertNotIn(f'menus/{UFV.CITY}/rus/ru-iii/name', changes)
         self.assertEqual(changes[prefix + 'status'], 'maintenance')
         self.assertTrue(changes[prefix + 'displayMessage'])
         self.assertEqual(changes[prefix + 'messageTitle'], 'Fechado para reforma')

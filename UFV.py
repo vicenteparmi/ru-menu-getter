@@ -19,9 +19,9 @@ NO_MEALS = 'Sem refeições disponíveis'
 WEEKDAYS = ['Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira',
             'Sexta-Feira', 'Sábado', 'Domingo']
 RESTAURANTS = {
-    'ru-i': 'Restaurante Universitário I (RU I)',
-    'ru-ii': 'Restaurante Universitário II (RU II)',
-    'ru-iii': 'Restaurante Universitário III (Multiuso)',
+    'ru-i': 'RU I',
+    'ru-ii': 'RU II',
+    'ru-iii': 'RU III (Multiuso)',
 }
 # Official DAL status: https://dal.ufv.br/horarios-ru/ (checked 2026-10-30).
 CLOSED_NOTICES = {
@@ -186,8 +186,13 @@ class Firebase:
             if restaurant not in menus:
                 metadata.update(CLOSED_NOTICES[restaurant])
             stored = (existing.get('rus') or {}).get(restaurant) or {}
+            legacy_names = {
+                'ru-i': 'Restaurante Universitário I (RU I)',
+                'ru-ii': 'Restaurante Universitário II (RU II)',
+                'ru-iii': 'Restaurante Universitário III (Multiuso)',
+            }
             for field, value in metadata.items():
-                if field not in stored:
+                if field not in stored or (field == 'name' and stored[field] == legacy_names[restaurant]):
                     changes[f'menus/{CITY}/rus/{restaurant}/{field}'] = value
             for date, payload in dates.items():
                 path = f'archive/menus/{CITY}/rus/{restaurant}/menus/{date}'
