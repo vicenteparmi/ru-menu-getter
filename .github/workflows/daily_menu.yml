@@ -122,6 +122,8 @@ jobs:
         with:
           ruby-version: '3.4.1'
       - run: gem install nokogiri firebase --no-document
+      - name: Validate UFABC HTTP retries
+        run: ruby UFABC/test_source_http.rb
       - name: Collect UFABC menus
         env:
           FIREBASE_KEY: ${{ secrets.SECRET }}

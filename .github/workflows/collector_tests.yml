@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main, fix/remaining-menu-collectors]
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', 'UFABC/**', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
   pull_request:
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', 'UFABC/**', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
 permissions:
   contents: read
 jobs:
@@ -24,6 +24,7 @@ jobs:
           ruby-version: '3.4.1'
       - run: ruby UFRGS/test_menu_dates.rb
       - run: ruby UFPR/test_source_http.rb
+      - run: ruby UFABC/test_source_http.rb
       - run: gem install nokogiri --no-document
       - run: ruby UFPR/test_menu_parser.rb
       - run: |
