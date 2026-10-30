@@ -92,14 +92,19 @@ python -m unittest discover -s tests -p 'test_ufv.py' -v
 O workflow independente [`ufv_menu.yml`](.github/workflows/ufv_menu.yml) executa
 a UFV duas vezes por dia (00:00 e 12:00 UTC), ou manualmente com
 `gh workflow run ufv_menu.yml`, reaproveitando `BASE_URI` e `SECRET`.
-Em pushes e pull requests, somente os testes locais são executados.
+Em pull requests e pushes de desenvolvimento, somente os testes locais são executados.
+Alterações integradas à main também publicam e verificam os dados UFV, incluindo
+os avisos de unidades sem cardápio.
 A coleta começa no dia atual em America/Sao_Paulo e busca 14 dias.
 O portal responde por **HTTP**; HTTPS retorna 403. Envia-se apenas a data
 ao portal, sem credenciais. O Firebase é acessado exclusivamente por HTTPS.
 
-O catálogo fica em `menus/ufv-vicosa/rus/{ru-i,ru-ii,ru-iii}`; somente unidades
-com refeições publicadas no intervalo são cadastradas. Inicialmente a fonte
-publica RU II e RU III/Multiuso; não há cardápio do RU I no intervalo validado.
+O catálogo fica em `menus/ufv-vicosa/rus/{ru-i,ru-ii,ru-iii}`; unidades com refeições publicadas no intervalo são cadastradas. O RU I também
+é cadastrado, sem cardápios, com status de manutenção e aviso “Fechado para reforma”,
+conforme https://dal.ufv.br/horarios-ru/. O aviso informa a transferência das refeições
+para o RU III/Multiuso. Configurações e avisos já mantidos pelos administradores são
+preservados. Se o RU I voltar a ter cardápio na fonte, o aviso não será inicializado
+para um cadastro novo; um aviso existente deve ser revisado pelo administrador.
 Uma refeição com rótulo compartilhado é distribuída somente às unidades
 explicitamente indicadas, em cada data. Refeitórios ou refeições desconhecidos
 interrompem a coleta antes de qualquer escrita.

@@ -62,7 +62,7 @@ class FirebaseTests(unittest.TestCase):
 
     def test_atomic_scoped_patch_preserves_admin_settings_and_other_data(self):
         existing = {'name': 'Viçosa, Minas Gerais', 'university': 'UFV',
-                    'rus': {'ru-iii': {'name': 'Custom name', 'status': 'maintenance', 'isNew': False}}}
+                    'rus': {'ru-i': {'name': 'RU I'}, 'ru-iii': {'name': 'Custom name', 'status': 'maintenance', 'isNew': False}}}
         writes = []
         def fake_call(path, data=None):
             if data is not None:
@@ -81,6 +81,31 @@ class FirebaseTests(unittest.TestCase):
         self.assertNotIn(f'menus/{UFV.CITY}/rus/ru-iii/isNew', changes)
         self.assertTrue(all(path.startswith((f'menus/{UFV.CITY}/', f'archive/menus/{UFV.CITY}/')) for path in changes))
         self.assertEqual(changes[f'archive/menus/{UFV.CITY}/rus/ru-iii/menus/2026-10-29']['menu'][2], [UFV.NO_MEALS])
+
+    def test_closed_ru_i_is_catalog_only_and_admin_notice_is_preserved(self):
+        existing = {'university': 'UFV', 'rus': {
+            'ru-i': {'name': 'RU I', 'messageContent': 'Aviso revisado'},
+            'ru-iii': {'name': 'Multiuso'},
+        }}
+        writes = []
+        def fake_call(path, data=None):
+            if data is not None:
+                writes.append(data)
+                return data
+            if path == f'menus/{UFV.CITY}':
+                return existing
+            return writes[0][path]
+        store = UFV.Firebase('https://example.firebaseio.com', 'test-auth')
+        with patch.object(store, 'call', side_effect=fake_call):
+            store.upload(self.menus)
+        changes = writes[0]
+        prefix = f'menus/{UFV.CITY}/rus/ru-i/'
+        self.assertEqual(changes[prefix + 'status'], 'maintenance')
+        self.assertTrue(changes[prefix + 'displayMessage'])
+        self.assertEqual(changes[prefix + 'messageTitle'], 'Fechado para reforma')
+        self.assertNotIn(prefix + 'messageContent', changes)
+        self.assertFalse(any(path.startswith(f'archive/menus/{UFV.CITY}/rus/ru-i/')
+                             for path in changes))
 
     def test_failed_readback_is_reported(self):
         store = UFV.Firebase('https://example.firebaseio.com', 'test-auth')
