@@ -78,4 +78,5 @@ jobs:
         env:
           FIREBASE_KEY: ${{ secrets.SECRET }}
           BASE_URL: ${{ secrets.BASE_URI }}
-        run: ruby -r './UNICAMP' -e 'UnicampMenus::FirebaseStore.new(base_url: ENV.fetch("BASE_URL"), auth: ENV.fetch("FIREBASE_KEY")).update_restaurant_names'
+        run: |
+          ruby -r './UNICAMP' -e 'UnicampMenus::FirebaseStore.new(base_url: ENV.fetch("BASE_URL"), auth: ENV.fetch("FIREBASE_KEY")).update_restaurant_names'
