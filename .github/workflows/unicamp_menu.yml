@@ -59,3 +59,23 @@ jobs:
           path: unicamp-menus.json
           if-no-files-found: ignore
           retention-days: 7
+
+  update-names:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    concurrency:
+      group: unicamp-restaurant-names
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.1'
+      - run: gem install nokogiri --no-document
+      - name: Update and verify restaurant display names
+        env:
+          FIREBASE_KEY: ${{ secrets.SECRET }}
+          BASE_URL: ${{ secrets.BASE_URI }}
+        run: ruby -r './UNICAMP' -e 'UnicampMenus::FirebaseStore.new(base_url: ENV.fetch("BASE_URL"), auth: ENV.fetch("FIREBASE_KEY")).update_restaurant_names'

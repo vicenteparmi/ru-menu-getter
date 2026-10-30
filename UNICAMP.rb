@@ -26,24 +26,24 @@ module UnicampMenus
       'name' => 'Campinas, São Paulo',
       'university' => 'UNICAMP',
       'rus' => {
-        'ru' => ['Restaurante Universitário (RU)', 'Av. Érico Veríssimo, 50 - Cidade Universitária, Campinas - SP'],
-        'ra' => ['Refeitório da Administração (RA)', 'Rua Bernardo Sayão, 198 - Cidade Universitária, Campinas - SP'],
-        'rs' => ['Restaurante da Saturnino (RS)', 'Rua Saturnino de Brito, 314 - Cidade Universitária, Campinas - SP']
+        'ru' => ['RU', 'Av. Érico Veríssimo, 50 - Cidade Universitária, Campinas - SP'],
+        'ra' => ['RA', 'Rua Bernardo Sayão, 198 - Cidade Universitária, Campinas - SP'],
+        'rs' => ['RS', 'Rua Saturnino de Brito, 314 - Cidade Universitária, Campinas - SP']
       }
     },
     'lim' => {
       'name' => 'Limeira, São Paulo',
       'university' => 'UNICAMP',
       'rus' => {
-        'rli' => ['Restaurante Campus I (RLI)', 'Rua Paschoal Marmo, 1888 - Jardim Nova Itália, Limeira - SP, 13484-332'],
-        'rlii' => ['Restaurante Campus II (RLII)', 'Rua Pedro Zaccaria, 1300 - Jardim São Paulo, Limeira - SP, 13484-350']
+        'rli' => ['RLI', 'Rua Paschoal Marmo, 1888 - Jardim Nova Itália, Limeira - SP, 13484-332'],
+        'rlii' => ['RLII', 'Rua Pedro Zaccaria, 1300 - Jardim São Paulo, Limeira - SP, 13484-350']
       }
     },
     'pir' => {
       'name' => 'Piracicaba, São Paulo',
       'university' => 'UNICAMP',
       'rus' => {
-        'rfop' => ['Restaurante FOP (RFOP)', 'Av. Limeira, 901 - Areião, Piracicaba - SP, 13414-903']
+        'rfop' => ['RFOP', 'Av. Limeira, 901 - Areião, Piracicaba - SP, 13414-903']
       }
     }
   }.freeze
@@ -380,6 +380,18 @@ module UnicampMenus
       end
     end
 
+    def update_restaurant_names
+      RESTAURANTS.each do |city_key, city|
+        city['rus'].each do |restaurant_key, (name, _address)|
+          path = "menus/#{city_key}/rus/#{restaurant_key}"
+          patch(path, { 'name' => name })
+          raise Error, "Falha ao verificar nome em #{path}" unless get(path)['name'] == name
+
+          puts "[FIREBASE] #{city_key}/#{restaurant_key}: #{name} verificado"
+        end
+      end
+    end
+
     def upload(all_menus)
       timestamp = Time.now.to_i
       all_menus.each do |city, restaurants|
@@ -531,6 +543,7 @@ module UnicampMenus
 
       store = FirebaseStore.new(base_url: ENV['BASE_URL'], auth: ENV['FIREBASE_KEY'])
       store.setup_restaurants if options[:setup]
+      store.update_restaurant_names
       store.upload(menus)
       puts '[UNICAMP] Cardápios válidos gravados e verificados.'
       runner.errors.empty? ? 0 : 1
