@@ -91,6 +91,10 @@ data.each do |city, city_data|
     context = "#{city}/#{restaurant}"
     begin
       menus = UfprMenuParser.parse(UfprSource.get(settings['url']))
+      if menus.empty?
+        puts "[UFPR] #{context}: cardápio ainda não publicado; nenhuma gravação"
+        next
+      end
       menus.select! do |date, _payload|
         (Date.today - 7..Date.today + 14).cover?(Date.iso8601(date))
       end

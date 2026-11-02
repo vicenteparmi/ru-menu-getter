@@ -39,8 +39,11 @@ module UfprSource
         response = Timeout.timeout(35) { http.request(request) }
         raise Error, "UFPR HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
 
-        return response.body.force_encoding('UTF-8')
-      rescue Timeout::Error, IOError, SystemCallError, Error => error
+        return response.body.dup.force_encoding('UTF-8')
+      rescue Timeout::Error, IOError, SystemCallError, Error, OpenSSL::SSL::SSLError => error
+        if error.is_a?(OpenSSL::SSL::SSLError) && !error.message.include?("unexpected eof while reading")
+          raise
+        end
         raise if index == attempts - 1
         warn "[UFPR] #{error.class}; retry #{index + 2}/#{attempts}"
         sleep(index + 1)

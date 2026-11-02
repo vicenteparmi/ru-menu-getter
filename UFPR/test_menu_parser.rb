@@ -47,10 +47,18 @@ class UfprMenuParserTest < Minitest::Test
     assert_equal 'Segundo', result['2026-10-29']['menu'][1].first
   end
 
-  def test_missing_table_is_rejected_instead_of_shifting_dates
-    assert_raises(UfprMenuParser::Error) do
-      UfprMenuParser.parse('<p><strong>Quarta-Feira 28/10/2026</strong></p>' + day('29/10/2026', 'Segundo'))
-    end
+  def test_unpublished_date_does_not_reuse_next_table
+    result = UfprMenuParser.parse('<p><strong>Quarta-Feira 28/10/2026</strong></p>' + day('29/10/2026', 'Segundo'))
+    assert_equal ['2026-10-29'], result.keys
+    assert_equal 'Segundo', result['2026-10-29']['menu'][1].first
+  end
+
+  def test_explicit_unpublished_notice_has_no_menu
+    assert_empty UfprMenuParser.parse('<p>O cardápio ainda não foi disponibilizado para hoje. Por favor, volte mais tarde.</p>')
+  end
+
+  def test_dated_heading_without_table_has_no_menu
+    assert_empty UfprMenuParser.parse('<p><strong>Segunda-Feira 02/11/2026</strong></p>')
   end
 
   def test_invalid_date_duplicate_date_and_empty_page_are_rejected

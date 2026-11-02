@@ -29,4 +29,39 @@ class UfprSourceHttpTest < Minitest::Test
       assert_raises(UfprSource::Error) { UfprSource.get(url) }
     end
   end
+  def test_interrupted_tls_read_is_retried
+    http = Net::HTTP.new('p4e.ufpr.br', 443)
+    calls = 0
+    request = lambda do |_request|
+      calls += 1
+      raise OpenSSL::SSL::SSLError, 'SSL_read: unexpected eof while reading' if calls == 1
+      response = Net::HTTPOK.new('1.1', '200', 'OK')
+      def response.body = '<html>menu</html>'
+      response
+    end
+    Net::HTTP.stub(:new, http) do
+      http.stub(:request, request) do
+        UfprSource.stub(:sleep, nil) do
+          assert_equal '<html>menu</html>', UfprSource.get('https://p4e.ufpr.br/ru/')
+        end
+      end
+    end
+    assert_equal 2, calls
+  end
+
+  def test_certificate_failure_is_not_retried
+    http = Net::HTTP.new('p4e.ufpr.br', 443)
+    calls = 0
+    request = lambda do |_request|
+      calls += 1
+      raise OpenSSL::SSL::SSLError, 'certificate verify failed'
+    end
+    Net::HTTP.stub(:new, http) do
+      http.stub(:request, request) do
+        assert_raises(OpenSSL::SSL::SSLError) { UfprSource.get('https://p4e.ufpr.br/ru/') }
+      end
+    end
+    assert_equal 1, calls
+  end
+
 end
