@@ -5,6 +5,8 @@ require 'cgi'
 
 module UfprMenuParser
   class Error < StandardError; end
+  class NotPublished < Error; end
+  NOT_PUBLISHED = 'O cardápio ainda não foi disponibilizado para hoje. Por favor, volte mais tarde.'.freeze
   NO_MEALS = 'Sem refeições disponíveis'
   WEEKDAYS = %w[Domingo Segunda-Feira Terça-Feira Quarta-Feira Quinta-Feira Sexta-Feira Sábado].freeze
   MEALS = { 'café da manhã' => 0, 'almoço' => 1, 'jantar' => 2 }.freeze
@@ -39,7 +41,14 @@ module UfprMenuParser
     end
     raise Error, "Tabela ausente para #{pending}" if pending && !closed && pending <= today
     warn "[UFPR] #{pending}: cabeçalho futuro sem tabela; cardápio ainda não publicado" if pending && !closed && pending > today
-    raise Error, 'Nenhum cardápio com data explícita encontrado' if result.empty?
+    if result.empty?
+      if pending.nil? && doc.css('table').empty? &&
+         doc.css('h1').any? { |node| clean(node.text).start_with?('Cardápio RU ') } &&
+         doc.css('p').any? { |node| clean(node.text) == NOT_PUBLISHED }
+        raise NotPublished, NOT_PUBLISHED
+      end
+      raise Error, 'Nenhum cardápio com data explícita encontrado'
+    end
     result
   rescue Date::Error => e
     raise Error, "Data inválida na fonte: #{e.message}"
