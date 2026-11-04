@@ -19,13 +19,14 @@ module UfprMenuParser
     doc = Nokogiri::HTML(html)
     result = {}
     pending = nil
+    unpublished = []
     closed = false
     doc.css('p, figure.wp-block-table').each do |node|
       if node.name == 'p'
         heading = clean(node.css('strong').map(&:text).join(' '))
         match = heading.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})\b/)
         next unless match && heading.match?(/Segunda|Terça|Terca|Quarta|Quinta|Sexta|Sábado|Sabado|Domingo|FERIADO|RECESSO/i)
-        raise Error, "Tabela ausente para #{pending}" if pending && !closed && pending <= today
+        unpublished << pending if pending && !closed
         year = match[3].length == 2 ? 2000 + match[3].to_i : match[3].to_i
         pending = Date.new(year, match[2].to_i, match[1].to_i)
         closed = heading.match?(/FERIADO|RECESSO|FECHADO/i)
@@ -39,13 +40,12 @@ module UfprMenuParser
         closed = false
       end
     end
-    raise Error, "Tabela ausente para #{pending}" if pending && !closed && pending <= today
-    warn "[UFPR] #{pending}: cabeçalho futuro sem tabela; cardápio ainda não publicado" if pending && !closed && pending > today
+    unpublished << pending if pending && !closed
+    unpublished.each { |date| puts "[UFPR] #{date}: cardápio ainda não publicado na fonte" }
     if result.empty?
-      if pending.nil? && doc.css('table').empty? &&
-         doc.css('h1').any? { |node| clean(node.text).start_with?('Cardápio RU ') } &&
-         doc.css('p').any? { |node| clean(node.text) == NOT_PUBLISHED }
-        raise NotPublished, NOT_PUBLISHED
+      official_menu_page = doc.css('h1').any? { |node| clean(node.text).start_with?('Cardápio RU ') }
+      if doc.css('table').empty? && (official_menu_page || !unpublished.empty?)
+        raise NotPublished, 'Nenhum cardápio publicado na fonte oficial'
       end
       raise Error, 'Nenhum cardápio com data explícita encontrado'
     end
