@@ -1,0 +1,26 @@
+name: UFPR source diagnosis
+on:
+  push:
+    branches: [fix/ufpr-recurring-alerts]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.1'
+      - run: gem install nokogiri --no-document
+      - name: Inspect public source markup
+        run: |
+          ruby -r './UFPR/source_http' -r nokogiri -e '
+            %w[matinhos jardim-botanico].each do |unit|
+              html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-#{unit}/")
+              doc = Nokogiri::HTML(html)
+              content = doc.at_css(".entry-content") || doc.at_css("main") || doc
+              puts "SOURCE #{unit}"
+              puts content.to_html[0, 45000]
+            end'
