@@ -80,6 +80,7 @@ end.parse!
 
 failed_rus = []
 collected = {}
+pending_rus = []
 firebase = nil
 unless options[:dry_run]
   abort 'BASE_URL e FIREBASE_KEY são obrigatórias para upload' if ENV['BASE_URL'].to_s.empty? || ENV['FIREBASE_KEY'].to_s.empty?
@@ -108,6 +109,9 @@ data.each do |city, city_data|
         raise 'Firebase releitura divergente' unless stored.success? && stored.body == value
         puts "[UFPR] #{context}/#{date}: gravado e verificado"
       end
+    rescue UfprMenuParser::NotPublished => e
+      puts "[UFPR] #{context}: aguardando publicação pela universidade"
+      pending_rus << "- #{context}: #{e.message} (#{settings['url']})"
     rescue StandardError => e
       warn "[UFPR ERROR] #{context}: #{e.class}: #{e.message}"
       failed_rus << { city: city, ru: restaurant, error: "#{e.class}: #{e.message}" }
@@ -116,6 +120,11 @@ data.each do |city, city_data|
 end
 
 File.write(options[:output], JSON.pretty_generate(collected)) if options[:output]
+unless pending_rus.empty?
+  report = "## UFPR — Aguardando publicação na fonte oficial\n\n#{pending_rus.join("\n")}\n"
+  File.write('ufpr_pending.md', report)
+  File.open(ENV['GITHUB_STEP_SUMMARY'], 'a') { |file| file.puts report } if ENV['GITHUB_STEP_SUMMARY']
+end
 if ENV['GITHUB_OUTPUT']
   File.open(ENV['GITHUB_OUTPUT'], 'a') { |file| file.puts "has_failures=#{!failed_rus.empty?}" }
 end
@@ -124,5 +133,5 @@ unless failed_rus.empty?
   failed_rus.each { |failure| report += "- #{failure[:city]}/#{failure[:ru]}: #{failure[:error]}\n" }
   File.write('ufpr_failures.md', report)
 end
-puts "[UFPR] #{collected.values.sum(&:size)} unidades coletadas; #{failed_rus.size} falha(s)."
+puts "[UFPR] #{collected.values.sum(&:size)} unidades coletadas; #{pending_rus.size} aguardando publicação; #{failed_rus.size} falha(s)."
 exit(failed_rus.empty? ? 0 : 1)

@@ -7,6 +7,9 @@ on:
     # UTFPR: Monday at 12:00 and Tuesday at 10:00 (America/Sao_Paulo).
     - cron: '0 15 * * 1'
     - cron: '0 13 * * 2'
+  push:
+    branches: [main]
+    paths: ['UFPR.rb', 'UFPR/**', '.github/workflows/daily_menu.yml']
   workflow_dispatch:
     inputs:
       target:
@@ -29,6 +32,7 @@ on:
 jobs:
   update-database:
     if: >-
+      github.event_name == 'push' ||
       (github.event_name == 'schedule' && github.event.schedule == '0 12,0 * * *') ||
       (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'daily' || inputs.target == 'ufpr'))
     runs-on: ubuntu-22.04
@@ -73,23 +77,46 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ufpr-menus
-        path: ufpr-menus.json
+        path: |
+          ufpr-menus.json
+          ufpr_pending.md
+          ufpr_failures.md
         if-no-files-found: ignore
         retention-days: 7
 
-    - name: Notify UFPR scraping failures via GitHub Issue
-      if: always() && steps.ufpr.outputs.has_failures == 'true' || hashFiles('ufpr_failures.md') != ''
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        if [ ! -f ufpr_failures.md ]; then
-          echo "No failure report found. Skipping issue creation."
-          exit 0
-        fi
-        gh label create "scraper-failure" --color "D93F0B" --description "Automated alert from scraper" 2>/dev/null || true
-        TITLE="⚠️ UFPR Scraper: partial failure — $(date -u +'%Y-%m-%d')"
-        BODY=$(cat ufpr_failures.md)
-        gh issue create --title "$TITLE" --body "$BODY" --label "scraper-failure"
+    - name: Maintain one issue for active UFPR failures
+      if: always() && steps.ufpr.outcome != 'skipped' && !inputs.ufpr_dry_run
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const title = '⚠️ UFPR Scraper: active failures';
+          const label = 'scraper-failure';
+          const repo = context.repo;
+          const issues = await github.paginate(github.rest.issues.listForRepo, {
+            ...repo, state: 'open', labels: label, per_page: 100
+          });
+          const issue = issues.find(item => !item.pull_request && item.title === title);
+          if (fs.existsSync('ufpr_failures.md')) {
+            const body = fs.readFileSync('ufpr_failures.md', 'utf8').trim();
+            if (issue) {
+              if ((issue.body || '').trim() !== body) {
+                await github.rest.issues.update({...repo, issue_number: issue.number, body});
+              }
+            } else {
+              try {
+                await github.rest.issues.getLabel({...repo, name: label});
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  ...repo, name: label, color: 'D93F0B', description: 'Automated alert from scraper'
+                });
+              }
+              await github.rest.issues.create({...repo, title, body, labels: [label]});
+            }
+          } else if (issue && '${{ steps.ufpr.outcome }}' === 'success') {
+            await github.rest.issues.update({...repo, issue_number: issue.number, state: 'closed'});
+          }
 
     # - name: Get UFRGS menus
     #   env:

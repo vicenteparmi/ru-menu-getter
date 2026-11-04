@@ -64,4 +64,17 @@ class UfprMenuParserTest < Minitest::Test
       UfprMenuParser.parse(day('29/10/2026', 'Arroz').sub('Almoço', 'Cabeçalho desconhecido'))
     end
   end
+  def test_official_not_published_notice_is_distinct_from_parse_failure
+    html = '<h1>Cardápio RU Matinhos</h1><p>' + UfprMenuParser::NOT_PUBLISHED + '</p>'
+    assert_raises(UfprMenuParser::NotPublished) { UfprMenuParser.parse(html) }
+    # A notice alongside a valid menu must not suppress the menu.
+    result = UfprMenuParser.parse(html + day('04/11/2026', 'Arroz'))
+    assert_equal ['Arroz', 'Opção vegana: Feijão', 'Salada'], result['2026-11-04']['menu'][1]
+    # A broken table alongside the notice must remain a real error.
+    error = assert_raises(UfprMenuParser::Error) do
+      UfprMenuParser.parse(html + '<table><tr><td>Arroz sem data</td></tr></table>')
+    end
+    refute_kind_of UfprMenuParser::NotPublished, error
+  end
+
 end

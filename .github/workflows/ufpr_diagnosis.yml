@@ -14,13 +14,15 @@ jobs:
         with:
           ruby-version: '3.4.1'
       - run: gem install nokogiri --no-document
-      - name: Inspect public source markup
-        run: |
-          ruby -r './UFPR/source_http' -r nokogiri -e '
-            %w[matinhos jardim-botanico].each do |unit|
-              html = UfprSource.get("https://p4e.ufpr.br/ru/cardapio-ru-#{unit}/")
-              doc = Nokogiri::HTML(html)
-              content = doc.at_css(".entry-content") || doc.at_css("main") || doc
-              puts "SOURCE #{unit}"
-              puts doc.css("h1, h2, p, figure, table").map(&:to_html).join("\n")[0, 55000]
-            end'
+      - run: gem install firebase --no-document
+      - run: ruby UFPR/test_menu_parser.rb
+      - name: Validate live sources without database writes
+        run: ruby UFPR.rb --dry-run --output ufpr-menus.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ufpr-validation
+          path: |
+            ufpr-menus.json
+            ufpr_pending.md
+            ufpr_failures.md
