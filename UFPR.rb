@@ -95,7 +95,7 @@ data.each do |city, city_data|
       menus.select! do |date, _payload|
         (Date.today - 7..Date.today + 14).cover?(Date.iso8601(date))
       end
-      raise UfprMenuParser::Error, 'Nenhum cardápio recente publicado' if menus.empty?
+      raise UfprMenuParser::NotPublished, 'Nenhum cardápio recente publicado' if menus.empty?
       collected[city] ||= {}
       collected[city][restaurant] = menus
       menus.each do |date, payload|

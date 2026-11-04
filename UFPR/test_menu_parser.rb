@@ -47,10 +47,10 @@ class UfprMenuParserTest < Minitest::Test
     assert_equal 'Segundo', result['2026-10-29']['menu'][1].first
   end
 
-  def test_missing_table_is_rejected_instead_of_shifting_dates
-    assert_raises(UfprMenuParser::Error) do
-      UfprMenuParser.parse('<p><strong>Quarta-Feira 28/10/2026</strong></p>' + day('29/10/2026', 'Segundo'))
-    end
+  def test_unpublished_day_is_skipped_without_shifting_dates
+    result = UfprMenuParser.parse('<p><strong>Quarta-Feira 28/10/2026</strong></p>' + day('29/10/2026', 'Segundo'))
+    assert_equal ['2026-10-29'], result.keys
+    assert_equal 'Segundo', result['2026-10-29']['menu'][1].first
   end
 
   def test_invalid_date_duplicate_date_and_empty_page_are_rejected
@@ -75,6 +75,13 @@ class UfprMenuParserTest < Minitest::Test
       UfprMenuParser.parse(html + '<table><tr><td>Arroz sem data</td></tr></table>')
     end
     refute_kind_of UfprMenuParser::NotPublished, error
+  end
+
+  def test_empty_official_menu_page_and_heading_without_table_are_pending
+    ['<h1>Cardápio RU Matinhos</h1><p>Volte mais tarde.</p>',
+     '<p><strong>Quarta-Feira 04/11/2026</strong></p>'].each do |html|
+      assert_raises(UfprMenuParser::NotPublished) { UfprMenuParser.parse(html) }
+    end
   end
 
 end
