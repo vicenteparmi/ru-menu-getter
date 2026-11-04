@@ -22,5 +22,5 @@ jobs:
               doc = Nokogiri::HTML(html)
               content = doc.at_css(".entry-content") || doc.at_css("main") || doc
               puts "SOURCE #{unit}"
-              puts content.to_html[0, 45000]
+              puts doc.css("h1, h2, p, figure, table").map(&:to_html).join("\n")[0, 55000]
             end'
