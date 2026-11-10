@@ -1,0 +1,22 @@
+name: Apply verified restaurant statuses
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/update_verified_statuses.py', '.github/workflows/catalog_status.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Update status fields and verify read-back
+        env:
+          FIREBASE_KEY: ${{ secrets.SECRET }}
+          BASE_URL: ${{ secrets.BASE_URI }}
+        run: python scripts/update_verified_statuses.py

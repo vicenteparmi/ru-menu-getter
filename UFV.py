@@ -178,7 +178,7 @@ class Firebase:
             dates = menus.get(restaurant, {})
             metadata = {
                 'name': RESTAURANTS[restaurant], 'address': 'Campus UFV - Viçosa, MG',
-                'displayMessage': False, 'isNew': True, 'status': 'beta',
+                'displayMessage': False, 'isNew': False, 'status': 'online',
                 'updateFrequency': 'daily', 'updateModeIsAuto': True,
             }
             # Seed the closure notice only while this unit has no published menu.

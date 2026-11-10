@@ -86,6 +86,23 @@ class UnicampMenusTest < Minitest::Test
     assert_equal 3, result['rs']['menu'].length
   end
 
+  def test_explicit_unpublished_vegan_option_keeps_standard_dinner_and_lunch
+    html = File.read(File.join(__dir__, 'tests/fixtures/unicamp-campinas-2026-11-13.html'))
+    parser = UnicampMenus::CampinasParser.new
+    result = parser.parse_day(html, expected_date: Date.new(2026, 11, 13), breakfast: ['Café'])
+    assert_equal %w[ra rs ru], result.keys.sort
+    result.each_value do |day|
+      assert_includes day['menu'][2], 'Prato principal: CUBOS DE CARNE AO MOLHO ROTY'
+      assert_includes day['menu'][2], 'Cardápio vegano ainda não publicado'
+      assert day['menu'][1].any? { |item| item.start_with?('Opção vegana:') }
+    end
+    # Missing markup without the source's explicit notice remains a parser error.
+    assert_raises(UnicampMenus::Error) do
+      parser.parse_day(html.sub('Não há jantar vegano cadastrado!', ''),
+                       expected_date: Date.new(2026, 11, 13), breakfast: ['Café'])
+    end
+  end
+
   def test_campinas_rejects_different_standard_and_vegan_restaurants
     parser = UnicampMenus::CampinasParser.new
     date = Date.new(2026, 8, 11)

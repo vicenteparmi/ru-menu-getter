@@ -32,6 +32,7 @@ from utfpr_firebase_uploader import upload_utfpr_menu_to_firebase
 from google_drive_downloader import download_pdfs_from_folder
 from gemini_pdf_processor import process_pdf_inline
 from models import validate_menu_data
+from local_pdf_parser import parse_pdf, UnsupportedLayout
 
 
 def process_pdf_menu(pdf_path: str) -> dict | None:
@@ -46,6 +47,16 @@ def process_pdf_menu(pdf_path: str) -> dict | None:
     """
     log_info(f"Processando PDF: {pdf_path}")
     
+    try:
+        local_menu = parse_pdf(pdf_path)
+        log_success("PDF extraído e validado localmente, sem Gemini")
+        return local_menu
+    except UnsupportedLayout as error:
+        log_info(f"Layout não reconhecido pelo parser local: {error}; usando Gemini")
+    except Exception as error:
+        log_error(f"Falha ao ler PDF: {error}")
+        return None
+
     try:
         log_info("Enviando para processamento (texto ou PDF)...")
         json_text = process_pdf_inline(pdf_path)
@@ -159,7 +170,7 @@ def main():
         except Exception as e:
             log_warning(f"Erro ao remover diretório temporário: {e}")
     
-    return 0 if total_uploaded > 0 else 1
+    return 0 if total_uploaded == len(pdf_files) else 1
 
 
 if __name__ == "__main__":

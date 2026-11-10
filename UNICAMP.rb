@@ -49,6 +49,7 @@ module UnicampMenus
   }.freeze
 
   class Error < StandardError; end
+  class NotPublished < Error; end
 
   TRANSIENT_NETWORK_ERRORS = [IOError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError, EOFError].freeze
 
@@ -177,7 +178,7 @@ module UnicampMenus
     end
 
     def parse_day(html, expected_date:, breakfast:)
-      raise Error, "Cardápio de Campinas ausente em #{expected_date}" if html.match?(/Não existe cardápio cadastrado/i)
+      raise NotPublished, "Cardápio de Campinas ausente em #{expected_date}" if html.match?(/Não existe cardápio cadastrado/i)
 
       doc = Nokogiri::HTML(html)
       title = TextHelpers.clean(doc.at_css('.navbar-brand')&.text)
@@ -193,6 +194,13 @@ module UnicampMenus
 
         item_name = TextHelpers.clean(section.at_css('.menu-item-name')&.text)
         description = section.at_css('.menu-item-description')
+        # The official page explicitly distinguishes an unpublished option from
+        # a malformed card. Keep the notice separate from parser failures.
+        notice = TextHelpers.clean(section.text)
+        if notice.match?(/Não há (?:almoço|jantar)(?: vegano)? cadastrado!/i)
+          cards[section_title.downcase] = :not_published
+          next
+        end
         next if item_name.empty? && description.nil?
 
         cards[section_title.downcase] = parse_card(section)
@@ -202,7 +210,10 @@ module UnicampMenus
         lunch: build_meal(cards, 'almoço'),
         dinner: build_meal(cards, 'jantar')
       }
-      raise Error, "Nenhuma refeição encontrada em Campinas para #{expected_date}" if meals.values.compact.empty?
+      if meals.values.compact.empty?
+        raise NotPublished, "Refeições ainda não publicadas para #{expected_date}" if !cards.empty? && cards.values.all? { |card| card == :not_published }
+        raise Error, "Nenhuma refeição encontrada em Campinas para #{expected_date}"
+      end
 
       build_restaurant_days(expected_date, meals, breakfast)
     end
@@ -228,6 +239,19 @@ module UnicampMenus
     def build_meal(cards, name)
       standard = cards[name]
       vegan = cards["#{name} vegano"]
+      return nil if standard == :not_published && vegan == :not_published
+      if standard == :not_published || vegan == :not_published
+        published = standard == :not_published ? vegan : standard
+        raise Error, "Cardápio incompleto sem aviso de publicação para #{name}" unless published.is_a?(Hash)
+        raise Error, "Indicação de restaurantes ausente para #{name}" unless published[:restaurants]
+
+        items = if standard == :not_published
+                  [*published[:items].map { |item| "Opção vegana: #{item}" }, 'Cardápio padrão ainda não publicado']
+                else
+                  [*published[:items], 'Cardápio vegano ainda não publicado']
+                end
+        return { items: items, restaurants: published[:restaurants] }
+      end
       return nil if standard.nil? && vegan.nil?
       raise Error, "Par padrão/vegano incompleto para #{name}" if standard.nil? || vegan.nil?
       # Some source cards omit the service sentence. Use only the explicit
@@ -371,8 +395,8 @@ module UnicampMenus
                   'name' => name,
                   'address' => address,
                   'displayMessage' => false,
-                  'isNew' => true,
-                  'status' => 'beta',
+                  'isNew' => city_key == 'cam',
+                  'status' => city_key == 'cam' ? 'beta' : 'online',
                   'updateFrequency' => 'daily',
                   'updateModeIsAuto' => true
                 })
@@ -458,7 +482,7 @@ module UnicampMenus
       result = Hash.new { |cities, city| cities[city] = Hash.new { |restaurants, ru| restaurants[ru] = {} } }
       safely('Campinas') { collect_campinas(result) } if %w[all campinas].include?(campus)
       safely('Limeira/Piracicaba') { collect_regional(result) } if %w[all regional].include?(campus)
-      raise Error, "Nenhum cardápio válido coletado. #{@errors.join('; ')}" if result.empty?
+      raise Error, "Nenhum cardápio válido coletado. #{@errors.join('; ')}" if result.empty? && !@errors.empty?
 
       result
     end
@@ -467,6 +491,8 @@ module UnicampMenus
 
     def safely(context)
       yield
+    rescue NotPublished => e
+      puts "[UNICAMP] #{context}: #{e.message}"
     rescue Error, Date::Error, URI::InvalidURIError, JSON::ParserError, *TRANSIENT_NETWORK_ERRORS => e
       message = "#{context}: #{e.class}: #{e.message}"
       @errors << message

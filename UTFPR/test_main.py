@@ -5,9 +5,15 @@ import unittest
 from unittest.mock import patch
 
 from main import process_pdf_menu
+from local_pdf_parser import UnsupportedLayout
 
 
 class ProcessPdfMenuTests(unittest.TestCase):
+    def setUp(self):
+        local = patch("main.parse_pdf", side_effect=UnsupportedLayout("unknown layout"))
+        local.start()
+        self.addCleanup(local.stop)
+
     @patch("main.process_pdf_inline")
     def test_returns_validated_menu(self, process_pdf_inline):
         process_pdf_inline.return_value = json.dumps({

@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main, fix/remaining-menu-collectors]
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', 'UFABC/**', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['UTFPR/**', 'RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', 'UFABC/**', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
   pull_request:
-    paths: ['RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', 'UFABC/**', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
+    paths: ['UTFPR/**', 'RU-AI-GETTER/**', 'UFRGS/**', 'tests/**', 'menu_http.rb', 'test_menu_http.rb', 'UFPR.rb', 'UFPR/**', 'UFABC.rb', 'UFABC/**', '.github/workflows/collector_tests.yml', '.github/workflows/daily_menu.yml']
 permissions:
   contents: read
 jobs:
@@ -19,6 +19,8 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install requests beautifulsoup4 pdfplumber==0.11.9
       - run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - run: python -m pip install -r UTFPR/requirements.txt
+      - run: python -m unittest discover -s UTFPR -p 'test_*.py' -v
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4.1'
