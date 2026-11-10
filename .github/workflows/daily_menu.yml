@@ -9,7 +9,7 @@ on:
     - cron: '0 13 * * 2'
   push:
     branches: [main]
-    paths: ['UFPR.rb', 'UFPR/**', '.github/workflows/daily_menu.yml']
+    paths: ['UFPR.rb', 'UFPR/**', 'UTFPR/**', '.github/workflows/daily_menu.yml']
   workflow_dispatch:
     inputs:
       target:
@@ -160,6 +160,7 @@ jobs:
 
   update-utfpr:
     if: >-
+      github.event_name == 'push' ||
       (github.event_name == 'schedule' &&
         (github.event.schedule == '0 15 * * 1' || github.event.schedule == '0 13 * * 2')) ||
       (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'utfpr'))

@@ -72,6 +72,11 @@ def upload_utfpr_menu_to_firebase(menu_data: Dict[str, Any]) -> bool:
             
             if response.status_code == 200:
                 print(f"[GETTING DATA > UTFPR] Response: {response.status_code}. Finished for {date_str}.")
+                stored = requests.get(firebase_url, timeout=30)
+                stored.raise_for_status()
+                if stored.json() != firebase_data:
+                    print(f"[UPLOAD ERROR] Read-back mismatch for {date_str}")
+                    return False
                 success_count += 1
             else:
                 print(f"[GETTING DATA > UTFPR] Response: {response.status_code}. Error for {date_str}.")
@@ -89,4 +94,4 @@ def upload_utfpr_menu_to_firebase(menu_data: Dict[str, Any]) -> bool:
     print(f"[GETTING DATA > UTFPR] Successful uploads: {success_count}")
     print(f"[GETTING DATA > UTFPR] Failures: {total_count - success_count}")
     
-    return success_count > 0
+    return total_count > 0 and success_count == total_count

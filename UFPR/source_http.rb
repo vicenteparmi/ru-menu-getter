@@ -20,7 +20,7 @@ module UfprSource
     store
   end
 
-  def self.get(url, attempts: 3)
+  def self.get(url, attempts: 4)
     uri = URI(url)
     unless uri.scheme == 'https' && uri.host == 'p4e.ufpr.br' && uri.userinfo.nil?
       raise Error, 'Unexpected UFPR source URL'
@@ -40,10 +40,10 @@ module UfprSource
         raise Error, "UFPR HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
 
         return response.body.force_encoding('UTF-8')
-      rescue Timeout::Error, IOError, SystemCallError, Error => error
+      rescue Timeout::Error, IOError, SystemCallError, OpenSSL::SSL::SSLError, Error => error
         raise if index == attempts - 1
         warn "[UFPR] #{error.class}; retry #{index + 2}/#{attempts}"
-        sleep(index + 1)
+        sleep([2, 5, 10][index] || 10)
       end
     end
   end

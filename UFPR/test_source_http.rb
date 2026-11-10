@@ -24,6 +24,30 @@ class UfprSourceHttpTest < Minitest::Test
     end
   end
 
+  def test_transient_http_and_tls_failures_recover_before_exhaustion
+    responses = [Net::HTTPInternalServerError.new('1.1', '500', 'error'),
+                 OpenSSL::SSL::SSLError.new('unexpected eof while reading'),
+                 Net::HTTPOK.new('1.1', '200', 'ok')]
+    responses.last.instance_variable_set(:@read, true)
+    responses.last.body = '<h1>Cardápio</h1>'
+    http = Object.new
+    %i[use_ssl= verify_mode= verify_hostname= cert_store= open_timeout= read_timeout=].each do |setter|
+      http.define_singleton_method(setter) { |_value| }
+    end
+    http.define_singleton_method(:request) do |_request|
+      value = responses.shift
+      raise value if value.is_a?(Exception)
+      value
+    end
+    delays = []
+    Net::HTTP.stub(:new, http) do
+      UfprSource.stub(:sleep, ->(seconds) { delays << seconds }) do
+        assert_equal '<h1>Cardápio</h1>', UfprSource.get('https://p4e.ufpr.br/ru/')
+      end
+    end
+    assert_equal [2, 5], delays
+  end
+
   def test_only_expected_https_source_is_allowed
     ['http://p4e.ufpr.br/', 'https://example.com/', 'file:///tmp/menu', 'https://user@p4e.ufpr.br/'].each do |url|
       assert_raises(UfprSource::Error) { UfprSource.get(url) }
