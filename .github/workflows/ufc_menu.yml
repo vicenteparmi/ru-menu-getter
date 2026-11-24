@@ -1,0 +1,35 @@
+name: UFC Fortaleza menu update
+
+on:
+  schedule:
+    - cron: '0 12,0 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['UFC.py', 'UFV.py', 'tests/test_ufc.py', '.github/workflows/ufc_menu.yml']
+  pull_request:
+    paths: ['UFC.py', 'UFV.py', 'tests/test_ufc.py', '.github/workflows/ufc_menu.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  update-ufc:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    concurrency:
+      group: ufc-fortaleza-menu-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install requests beautifulsoup4
+      - run: python -m unittest discover -s tests -p 'test_ufc.py' -v
+      - name: Collect and publish UFC Fortaleza menus
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          FIREBASE_KEY: ${{ secrets.SECRET }}
+          BASE_URL: ${{ secrets.BASE_URI }}
+        run: python UFC.py --upload
