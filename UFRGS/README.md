@@ -4,4 +4,4 @@ O CampusDine coleta os cardápios do RU01 ao RU06 na [página da PRAE](https://w
 
 Para coletar sem gravar, execute `ruby UFRGS/UFRGS.rb --dry-run` a partir da raiz do repositório. A execução com `BASE_URL` e `FIREBASE_KEY` configuradas grava os menus e relê cada registro para conferir o resultado.
 
-O workflow **UFSC and UFRGS menu update** publica automaticamente de segunda a sábado. A execução manual começa em modo de leitura e permite ativar a publicação pelo campo `upload`.
+A tarefa `ufrgs-menu-scraper` roda no Cloud Run em `southamerica-east1`. O Cloud Scheduler dispara a coleta nas segundas e terças às 8h, no horário de Brasília. O coletor usa esse ambiente porque o portal da PRAE encerrou conexões vindas dos runners hospedados do GitHub Actions.
