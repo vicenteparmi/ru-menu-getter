@@ -7,12 +7,17 @@ import pytesseract
 import io
 import re
 import os
-from datetime import datetime
+from datetime import date as local_date
 from urllib.parse import urljoin
 from .base_scraper import RestaurantScraper
 
 class BlumenauScraper(RestaurantScraper):
     BASE_URL = "https://ru.blumenau.ufsc.br/cardapios/"
+
+    def get_menu_data(self, date=None):
+        from .blumenau_image_menu import collect
+
+        return collect(self, date or local_date.today())
 
     def get_menu_text(self, date=None):
         html = self.fetch_html(self.BASE_URL)

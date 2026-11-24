@@ -46,7 +46,7 @@ class RestaurantScraper:
         return pdf_links_with_dates[0][0]
 
     def download_pdf(self, url):
-        resp = requests.get(url, timeout=30)
+        resp = requests.get(url.replace('http://', 'https://', 1) if url.startswith('http://') else url, timeout=30)
         resp.raise_for_status()
         if not resp.content.startswith(b'%PDF-'):
             raise ValueError('A fonte não retornou um PDF válido')

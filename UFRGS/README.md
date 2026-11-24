@@ -1,20 +1,7 @@
-# Coletor UFRGS no servidor próprio
+# Coleta da UFRGS
 
-A coleta continua no servidor já utilizado pelo projeto. A alteração não cria
-agenda ou execução de coleta no GitHub.
+O CampusDine coleta os cardápios do RU01 ao RU06 na [página da PRAE](https://www.ufrgs.br/prae/cardapio-restaurante-universitario/). O coletor valida as datas pelo cabeçalho da tabela e exclui o RU01 Anexo, que possui cardápio próprio e não está no catálogo.
 
-A data de um título de cardápio só é aceita se estiver próxima da execução
-(até sete dias atrás ou quatorze dias à frente). Anos explícitos são respeitados;
-sem ano explícito, usa-se a ocorrência mais próxima, incluindo a virada do ano.
-Isso impede que seções antigas de dezembro sejam gravadas como dezembro do ano
-atual. Dados históricos existentes não são removidos automaticamente.
+Para coletar sem gravar, execute `ruby UFRGS/UFRGS.rb --dry-run` a partir da raiz do repositório. A execução com `BASE_URL` e `FIREBASE_KEY` configuradas grava os menus e relê cada registro para conferir o resultado.
 
-A verificação TLS permanece habilitada. Falhas de certificado/conexão na origem
-precisam ser corrigidas na origem ou na cadeia de certificados do ambiente.
-
-```sh
-ruby test_menu_dates.rb
-```
-
-Atualize o checkout no servidor. Se usar a imagem Docker deste diretório,
-reconstrua a imagem: o coletor agora inclui também `menu_dates.rb`.
+O workflow **UFSC and UFRGS menu update** publica automaticamente de segunda a sábado. A execução manual começa em modo de leitura e permite ativar a publicação pelo campo `upload`.
