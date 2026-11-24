@@ -173,6 +173,8 @@ que o café não seja servido. Feriados explícitos no PDF são preservados como
 `Sem refeições disponíveis`. Em Joinville, preservam-se os horários/condições
 indicados no cabeçalho do café, inclusive a restrição a alunos isentos.
 
-O teste de regressão do GitHub apenas executa testes: **não agenda nem executa a
-coleta UFSC no GitHub**. Para usar as correções, atualize o checkout deste
-repositório no servidor que já executa os coletores.
+## Atualização semanal no GitHub Actions
+
+O workflow **UFSC and UFRGS menu update** executa um job por unidade da UFSC e publica os cardápios validados no Firebase. Para conferir uma unidade localmente, use `python RU-AI-GETTER/collect_weekly_menus.py cca` a partir da raiz. Os nomes aceitos são `cca`, `joinville`, `trindade`, `curitibanos` e `blumenau`. A opção `--upload` grava e relê os registros usando `BASE_URL` e `FIREBASE_KEY`.
+
+A coleta requer requests, beautifulsoup4 e pdfplumber. Blumenau também requer Pillow, pytesseract e Tesseract com o idioma português. A data e os cabeçalhos da imagem de Blumenau são checados antes da publicação. Em Curitibanos, linhas vegetarianas com colunas sobrepostas são omitidas e sinalizadas no log.
