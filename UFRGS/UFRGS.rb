@@ -15,6 +15,8 @@ module UfrgsMenus
 
   def self.parse(html, today:)
     page = Nokogiri::HTML(html, nil, 'UTF-8')
+    monday = today - ((today.wday + 6) % 7)
+    week = (monday..monday + 6).to_h { |day| [day.strftime('%d/%m'), day] }
     menus = {}
     page.css('h5').each do |heading|
       number = heading.text.strip[/\ARU(0[1-6])\s*[-–]/i, 1]
@@ -42,7 +44,7 @@ module UfrgsMenus
           end
           headers.each_with_index do |header, column|
             short_date = header.at_css('small')&.text.to_s.strip
-            date = (today - 6..today + 7).find { |day| day.strftime('%d/%m') == short_date }
+            date = week[short_date]
             next unless date
 
             weekday = header.children.select(&:text?).map(&:text).join.strip
