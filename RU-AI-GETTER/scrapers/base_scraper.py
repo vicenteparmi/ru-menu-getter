@@ -1,4 +1,6 @@
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 import pdfplumber
 import datetime
@@ -8,14 +10,22 @@ import os
 from urllib.parse import urlparse
 from datetime import datetime as dt
 
+def fetch_source(url):
+    retries = Retry(total=2, backoff_factor=1, status_forcelist=(429, 500, 502, 503, 504),
+                    respect_retry_after_header=False)
+    with requests.Session() as session:
+        session.mount('https://', HTTPAdapter(max_retries=retries))
+        response = session.get(url, timeout=(12, 20))
+        response.raise_for_status()
+        return response
+
+
 class RestaurantScraper:
     """
     Classe base para scrapers de restaurantes. Permite fácil extensão para novos restaurantes.
     """
     def fetch_html(self, url):
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
-        return resp.text
+        return fetch_source(url).text
 
     def find_pdf_url(self, html, date=None):
         soup = BeautifulSoup(html, 'html.parser')
@@ -46,8 +56,8 @@ class RestaurantScraper:
         return pdf_links_with_dates[0][0]
 
     def download_pdf(self, url):
-        resp = requests.get(url.replace('http://', 'https://', 1) if url.startswith('http://') else url, timeout=30)
-        resp.raise_for_status()
+        url = url.replace('http://', 'https://', 1) if url.startswith('http://') else url
+        resp = fetch_source(url)
         if not resp.content.startswith(b'%PDF-'):
             raise ValueError('A fonte não retornou um PDF válido')
         return io.BytesIO(resp.content)

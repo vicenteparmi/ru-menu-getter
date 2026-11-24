@@ -5,16 +5,15 @@ import re
 import subprocess
 from urllib.parse import urljoin
 
-import requests
 from bs4 import BeautifulSoup
 from PIL import Image, ImageOps
 
+from .base_scraper import fetch_source
 from .pdf_menu import WEEKDAYS, payload
 
 
 def read_image(url):
-    response = requests.get(url, timeout=20)
-    response.raise_for_status()
+    response = fetch_source(url)
     with Image.open(io.BytesIO(response.content)) as image:
         return image.convert('RGB')
 
