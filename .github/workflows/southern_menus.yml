@@ -1,4 +1,4 @@
-name: UFSC and UFRGS menu update
+name: UFSC menu update
 on:
   schedule:
     - cron: '35 10,18 * * 1-6'
@@ -11,30 +11,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: southern-menus
+  group: ufsc-menus
   cancel-in-progress: false
 jobs:
-  ufrgs:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 6
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.4.3'
-      - run: gem install nokogiri firebase --no-document
-      - name: Collect and validate UFRGS
-        env:
-          BASE_URL: ${{ secrets.BASE_URI }}
-          FIREBASE_KEY: ${{ secrets.SECRET }}
-          PUBLISH: ${{ github.event_name == 'schedule' || inputs.upload }}
-        run: |
-          if [ "$PUBLISH" = true ]; then
-            test -n "$BASE_URL" && test -n "$FIREBASE_KEY" || exit 1
-            ruby UFRGS/UFRGS.rb
-          else
-            ruby UFRGS/UFRGS.rb --dry-run
-          fi
   ufsc:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
